@@ -68,6 +68,9 @@ def stft_transform(frqs):
 def get_magnitudes(stfts):
     return [np.abs(stft) for stft in stfts]
 
+def get_powermels(stft_mags):
+    return [librosa.feature.melspectrogram(S=librosa.power_to_db(stft_mag)) for stft_mag in stft_mags]
+
 def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs):
     trs, trn, trx = [], [], []
     for i, trs_spkr in enumerate(trs_spkr_lists):
@@ -81,31 +84,43 @@ def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs):
     trx = np.concatenate(trx).ravel()
     return trs, trn, trx
 
-def load_testset(trs_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs):
-    tes_spkr = get_random_tes(trs_spkr_lists)
-    tes_list = load_spkr('Data/train/{}'.format(tes_spkr))
-    tes = tes_list[np.random.randint(0,len(tes_list))]
+def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs):
+    tes, _, tex = [], [], []
     if use_only_seen_noises:
         noise_idx = np.random.choice(noise_idx_list)
     else:
-        noise_idx = np.random.randint(0,len(noise_frqs)) 
-    print ("Test Speaker: {} Noise Index: {}".format(tes_spkr, noise_idx))
-    _, tex = get_and_add_noise(noise_frqs[noise_idx], tes)
+        noise_idx = np.random.choice(tuple(set(np.arange(len(noise_frqs))) - set(noise_idx_list)))
+        
+    for i, tes_spkr in enumerate(tes_spkr_lists):
+        tes_list = load_spkr('Data/train/{}'.format(tes_spkr))
+        spkr_s = tes_list[np.random.randint(0,len(tes_list))]
+        spkr_n, spkr_x = get_and_add_noise(noise_frqs[noise_idx], spkr_s)
+        tes.append(spkr_s)
+        tex.append(spkr_x)
+    tes = np.concatenate(tes).ravel()
+    tex = np.concatenate(tex).ravel()
+    
+    print ("Test Noise Index: {}".format(noise_idx))
     return tes, tex
 
-def setup_experiment_data(num_dr, per_dr_spkr_num, noise_idx_list, use_only_seen_noises):
+def setup_experiment_data(args):
     noise_frqs = load_noises('Data/Duan')
     
     # Load trainset
     trs_spkr_lists = []
-    for i in range(1,num_dr+1):
-        trs_spkr_lists += get_random_dr_speakers(i, per_dr_spkr_num)
+    for i in range(1,args.n_dr+1):
+        trs_spkr_lists += get_random_dr_speakers(i, args.n_spkr)
     print ("Train Speakers: {}".format(trs_spkr_lists))
     random.shuffle(trs_spkr_lists)
-    trs, trn, trx = load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs)
+    trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs)
 
     # Load testset
-    tes, tex = load_testset(trs_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs)
+    tes_spkr_lists = []
+    for i in range(args.n_test_spkrs):
+        tes_spkr_lists.append(get_random_tes(trs_spkr_lists))
+    print ("Test Speakers: {}".format(tes_spkr_lists))
+    random.shuffle(tes_spkr_lists)
+    tes, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs)
 
     # Normalize
     max_amp = trx.max()
@@ -115,6 +130,12 @@ def setup_experiment_data(num_dr, per_dr_spkr_num, noise_idx_list, use_only_seen
     trS, trN, trX, teX = stft_transform([trs, trn, trx, tex])
     trS_mag, trN_mag, trX_mag, teX_mag = get_magnitudes([trS, trN, trX, teX])
     IBM = (trS_mag > trN_mag)*1
+    
+    # Power mel-spectrogram
+    trX_mag_pmel, teX_mag_pmel = get_powermels([trX_mag, teX_mag])
 
-    data = {'tes': tes, 'teX': teX, 'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM}
+    data = {'tes': tes, 'teX': teX, 
+            'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
+            'trX_mag_pmel': trX_mag_pmel, 'teX_mag_pmel': teX_mag_pmel}
+    
     return data

@@ -75,13 +75,14 @@ def main():
     
     if args.is_debug:
         seeded_snr_means = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
-        tot_seeds = 1000
+        tot_seeds = 100
         for seed in range(tot_seeds):
             args.seed = seed
             np.random.seed(args.seed)
             args.noise_idx = [seed % 10]
             data = setup_experiment_data(args)
             _, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+            print (seed, snr_mean)
             seeded_snr_means[str(args.noise_idx[0])] += snr_mean
         snrs = [seeded_snr_means[str(idx)]/(tot_seeds/10) for idx in range (10)]
         plt.bar(np.arange(10), height=snrs)

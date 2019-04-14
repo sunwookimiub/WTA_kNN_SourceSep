@@ -137,7 +137,6 @@ def setup_experiment_data(args):
     print ("Test Speakers: {}".format(tes_spkr_lists))
     random.seed(args.seed)
     random.shuffle(tes_spkr_lists)
-    print (args.noise_idx)
     tes, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
 
     # Normalize
@@ -156,4 +155,4 @@ def setup_experiment_data(args):
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
             'trX_mag_pmel': trX_mag_pmel, 'teX_mag_pmel': teX_mag_pmel}
     
-    return data, noise_idx
+    return data

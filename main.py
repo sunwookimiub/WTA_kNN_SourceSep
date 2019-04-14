@@ -63,7 +63,7 @@ def main():
     stft_Fs = get_DnC_FL_divs(args.DnC, 513)
     Ls = get_DnC_FL_divs(args.DnC, args.L)
     
-    model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})DK({}|{})".format(
+    model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})".format(
         args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
         args.use_pmel, args.n_noise, args.use_only_seen_noises, args.seed,
         args.errmetric, args.num_L, int(args.time_th),

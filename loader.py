@@ -113,8 +113,10 @@ def setup_experiment_data(args):
     noise_frqs = load_noises('Data/Duan')
     if args.n_noise == 5:
         noise_idx = np.arange(5)
-    else:
+    elif args.n_noise == 10:
         noise_idx = np.arange(10)
+    else:
+        noise_idx = [5]
     # Load trainset
     trs_spkr_lists = []
     for i in range(1,args.n_dr+1):

@@ -92,7 +92,7 @@ def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs, seed):
     return trs, trn, trx
 
 def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs, seed):
-    tes, _, tex = [], [], []
+    tes, ten, tex = [], [], []
     used_noises = []
     np.random.seed(seed)
     use_perms = np.random.permutation(len(noise_idx_list))
@@ -108,12 +108,14 @@ def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frq
         used_noises.append(noise_idx)
         spkr_n, spkr_x = get_and_add_noise(noise_frqs[noise_idx], spkr_s, seed)
         tes.append(spkr_s)
+        ten.append(spkr_n)
         tex.append(spkr_x)
     tes = np.concatenate(tes).ravel()
+    ten = np.concatenate(ten).ravel()
     tex = np.concatenate(tex).ravel()
     
     print ("Test Noise Index: {}".format(used_noises))
-    return tes, tex
+    return tes, ten, tex
 
 def setup_experiment_data(args):
     noise_frqs = load_noises('Data/Duan')
@@ -137,21 +139,22 @@ def setup_experiment_data(args):
     print ("Test Speakers: {}".format(tes_spkr_lists))
     random.seed(args.seed)
     random.shuffle(tes_spkr_lists)
-    tes, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
+    tes, ten, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
 
     # Normalize
     max_amp = trx.max()
-    trs, trn, trx, tes, tex = normalize_frqs(max_amp, [trs, trn, trx, tes, tex])
+    trs, trn, trx, tes, ten, tex = normalize_frqs(max_amp, [trs, trn, trx, tes, ten, tex])
 
     # STFT
-    trS, trN, trX, teX = stft_transform([trs, trn, trx, tex])
-    trS_mag, trN_mag, trX_mag, teX_mag = get_magnitudes([trS, trN, trX, teX])
+    trS, trN, trX, teS, teN, teX = stft_transform([trs, trn, trx, tes, ten, tex])
+    trS_mag, trN_mag, trX_mag, teS_mag, teN_mag, teX_mag = get_magnitudes([trS, trN, trX, teS, teN, teX])
     IBM = (trS_mag > trN_mag)*1
+    te_IBM = (teS_mag > teN_mag)*1
     
     # Power mel-spectrogram
     trX_mag_pmel, teX_mag_pmel = get_powermels([trX_mag, teX_mag])
 
-    data = {'tes': tes, 'teX': teX, 
+    data = {'tes': tes, 'teX': teX, 'te_IBM': te_IBM, 
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
             'trX_mag_pmel': trX_mag_pmel, 'teX_mag_pmel': teX_mag_pmel}
     

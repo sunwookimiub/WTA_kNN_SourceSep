@@ -37,18 +37,80 @@ def WTA(X,P):
         maxIX[ii,:] = P[ii,maxIY[ii,:]]
     return maxIY, maxIX
 
-def plot_results(snr_med, snr_mean, wta_snr_med, wta_snr_mean, search_snr_med, search_snr_mean, model_nm):
-    f, axarr = plt.subplots(1, 3, figsize=(12,4))
-    axarr[0].set_title('SNR (Median)')
-    axarr[0].plot(search_snr_med)
-    axarr[1].set_title('SNR (Mean)')
-    axarr[1].plot(search_snr_mean)
-    axarr[2].set_title('SNR vs.')
-    axarr[2].bar([0,1],
-                height=[snr_med, snr_mean])
-    axarr[2].bar([2,3],
-                height=[wta_snr_med, wta_snr_mean])
-    axarr[2].bar([4,5],
-                height=[search_snr_med.max(),search_snr_mean.max()])
+def plot_results(snr_true, snr_mean, wta_snr_mean, search_snr_mean, model_nm):
+    f, axarr = plt.subplots(1, 2, figsize=(12,4))
+    axarr[0].set_title('SNR (Mean)')
+    axarr[0].plot(search_snr_mean)
+    axarr[1].set_title('SNR vs.')
+    axarr[1].bar([0],
+                height=[snr_true])
+    axarr[1].bar([1],
+                height=[snr_mean])
+    axarr[1].bar([2],
+                height=[wta_snr_mean])
+    axarr[1].bar([3],
+                height=[search_snr_mean.max()])
     f.tight_layout()
     f.savefig(model_nm)
+
+
+class model_argparse():
+    def __init__(self, model_nm):
+        self.n_dr = None
+        self.n_spkr = None
+        self.errmetric = None
+        self.num_L = None
+        
+        self.noise_idx = None
+        self.n_test_spkrs = None
+        self.use_only_seen_noises = None
+        self.use_pmel = None
+        self.seed = None
+        self.n_rs = None
+        
+        self.K = None
+        self.L = None
+        self.M = None
+        self.DnC = None
+        
+        self.print_every = 10
+        self.time_th = None
+        self.is_save = False
+        self.parse(model_nm)
+    
+    def parse(self, model_nm):
+        real_nm = model_nm.split('.npy')[0]
+        split_nm = real_nm.split('_')
+        first_split = split_nm[0].split('(')[1].split(')')[0].split('|')
+        second_split = split_nm[1].split('(')[1].split(')')[0].split('|')
+        third_split = split_nm[2].split('(')[1].split(')')[0].split('|')
+        fourth_split = split_nm[3].split('(')[1].split(')')[0].split('|')
+        
+        self.n_dr = int(first_split[0])
+        self.n_spkr = int(first_split[1])
+        self.n_test_spkrs = int(first_split[2])
+        self.n_rs = int(first_split[3])
+        self.use_pmel = True if first_split[4] == 'True' else False
+        self.noise_idx = list(map(int, first_split[5].replace("[", "").replace("]", "").split(',')))
+        self.use_only_seen_noises = bool(first_split[6])
+        self.seed = int(first_split[7])
+        
+        self.errmetric = second_split[0]
+        self.num_L = int(second_split[1])
+        self.time_th = float(second_split[2])
+        
+        self.L = int(third_split[0])
+        self.M = int(third_split[1])
+        
+        self.DnC = int(fourth_split[0])
+        self.K = int(fourth_split[1])
+
+
+def get_model_nm(args):        
+    model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})".format(
+        args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
+        args.use_pmel, args.noise_idx, args.use_only_seen_noises, args.seed,
+        args.errmetric, args.num_L, int(args.time_th),
+        args.L, args.M,
+        args.DnC, args.K)
+    return model_nm

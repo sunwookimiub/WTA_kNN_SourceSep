@@ -81,8 +81,8 @@ def get_powermels(stft_mags):
 def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs, seed):
     trs, trn, trx = [], [], []
     for i, trs_spkr in enumerate(trs_spkr_lists):
-        for noise_idx in noise_idx_list:
-            s, n, x = load_more_spkr_with_noise('Data/train/{}'.format(trs_spkr), noise_frqs[noise_idx], seed) 
+        for idx in noise_idx_list:
+            s, n, x = load_more_spkr_with_noise('Data/train/{}'.format(trs_spkr), noise_frqs[idx], seed) 
             trs.append(s)
             trn.append(n)
             trx.append(x)
@@ -93,21 +93,26 @@ def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs, seed):
 
 def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs, seed):
     tes, _, tex = [], [], []
-    if use_only_seen_noises:
-        noise_idx = np.random.choice(noise_idx_list)
-    else:
-        noise_idx = np.random.choice(tuple(set(np.arange(len(noise_frqs))) - set(noise_idx_list)))
-        
+    used_noises = []
+    np.random.seed(seed)
+    use_perms = np.random.permutation(len(noise_idx_list))
+    all_perms = np.random.permutation(len(tes_spkr_lists))%10
+    
     for i, tes_spkr in enumerate(tes_spkr_lists):
         tes_list = load_spkr('Data/train/{}'.format(tes_spkr))
         spkr_s = tes_list[np.random.randint(0,len(tes_list))]
+        if use_only_seen_noises:            
+            noise_idx = noise_idx_list[use_perms[i%len(use_perms)]]
+        else:
+            noise_idx = all_perms[i%len(all_perms)]
+        used_noises.append(noise_idx)
         spkr_n, spkr_x = get_and_add_noise(noise_frqs[noise_idx], spkr_s, seed)
         tes.append(spkr_s)
         tex.append(spkr_x)
     tes = np.concatenate(tes).ravel()
     tex = np.concatenate(tex).ravel()
     
-    print ("Test Noise Index: {}".format(noise_idx))
+    print ("Test Noise Index: {}".format(used_noises))
     return tes, tex
 
 def setup_experiment_data(args):
@@ -132,6 +137,7 @@ def setup_experiment_data(args):
     print ("Test Speakers: {}".format(tes_spkr_lists))
     random.seed(args.seed)
     random.shuffle(tes_spkr_lists)
+    print (args.noise_idx)
     tes, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
 
     # Normalize
@@ -150,4 +156,4 @@ def setup_experiment_data(args):
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
             'trX_mag_pmel': trX_mag_pmel, 'teX_mag_pmel': teX_mag_pmel}
     
-    return data
+    return data, noise_idx

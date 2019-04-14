@@ -19,10 +19,10 @@ def parse_arguments():
                         help="Search: Number of permutations per search")
 
     
-    parser.add_argument("--noise_idx", type=int, nargs='*', default=[2],
+    parser.add_argument("--noise_idx", type=int, nargs='*', default=[3],
                         help="Noises (e.g. '5 6' gives 5th and 6th noise [cicada, birds]. Default: 5)")
-    parser.add_argument("-q", "--n_test_spkrs", type=int, default=8, 
-                        help="Data: Number of test utterances (Default: 8)")
+    parser.add_argument("-q", "--n_test_spkrs", type=int, default=10, 
+                        help="Data: Number of test utterances (Default: 10)")
     parser.add_argument("-u", "--use_only_seen_noises", action='store_false',
                         help = "Data: Option to select beyond seen noises")
     parser.add_argument("-e", "--use_pmel", action='store_true',

@@ -102,14 +102,14 @@ def main():
         _, wta_snr_mean, P = DnC_batch(data, args, True, pmel_Fs, stft_Fs, Ls, epochs=1)
         print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
 
-    #     # Generate good perms
-    #     search_Ps, search_errs = DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls)
-    #     search_snr_med, search_snr_mean, errs = DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, search_Ps)
-    #     plot_results(snr_med, snr_mean, wta_snr_med, wta_snr_mean, search_snr_med, search_snr_mean, model_nm)
+        # Generate good perms
+        search_Ps, search_errs = DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls)
+        search_snr_med, search_snr_mean, errs = DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, search_Ps)
+        plot_results(snr_med, snr_mean, wta_snr_med, wta_snr_mean, search_snr_med, search_snr_mean, model_nm)
 
-    #     if args.is_save:
-    #         np.save(model_nm, good_Ps)
-    #         print ("Saved")
+        if args.is_save:
+            np.save(model_nm, good_Ps)
+            print ("Saved")
 
 if __name__ == "__main__":
     main()

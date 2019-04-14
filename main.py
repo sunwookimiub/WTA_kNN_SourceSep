@@ -20,14 +20,18 @@ def parse_arguments():
                         help="Search: Number of permutations per search")
 
     
-    parser.add_argument("--noise_idx", type=int, nargs='*', default=[5],
-                        help="Data: Noises (e.g. '5 6' gives 5th and 6th noise [cicada, birds]. Default: 5)")
-    parser.add_argument("-n", "--n_test_spkrs", type=int, default=5, 
-                        help="Data: Number of test utterances (Default: 5)")
+    parser.add_argument("-n", "--noise_idx", type=int, default=5,
+                        help="Data: Number of noises (Default: 5)")
+    parser.add_argument("-k", "--n_test_spkrs", type=int, default=8, 
+                        help="Data: Number of test utterances (Default: 8)")
     parser.add_argument("-u", "--use_only_seen_noises", action='store_false',
                         help = "Data: Option to select beyond seen noises")
     parser.add_argument("-e", "--use_pmel", action='store_true',
                         help = "Data: Option to use power mel spectrogram")
+    parser.add_argument("-c", "--seed", type=int, default=22,
+                        help = "Data: Seed for train and test speaker selection")
+    parser.add_argument("-r", "--n_rs", type=int, default=1,
+                        help = "Data: Random sampling")
     
     parser.add_argument("-k", "--K", type=int, default=5,
                         help="kNN: Number of nearest neighbors (Default: 5)")
@@ -59,11 +63,14 @@ def main():
     stft_Fs = get_DnC_FL_divs(args.DnC, 513)
     Ls = get_DnC_FL_divs(args.DnC, args.L)
     
-    model_nm = "DSENT({}|{}|{}|{}|{})_Mel({})_Noise({}|{})_DnC({})".format(
-        args.n_dr, args.n_spkr, args.errmetric, args.num_L, int(args.time_th), args.use_pmel,
-        args.noise_idx, args.use_only_seen_noises, args.DnC)
+    model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})DK({}|{})".format(
+        args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
+        args.use_pmel, args.n_noise, args.use_only_seen_noises, args.seed
+        args.errmetric, args.num_L, int(args.time_th),
+        args.L, args.M,
+        args.DnC, args.K)
     print ("Running {}...".format(model_nm))
-
+    
     snr_med, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
     print("Median SNR: {:.2f} Mean SNR: {:.2f}".format(snr_med, snr_mean))
     

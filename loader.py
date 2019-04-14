@@ -30,33 +30,39 @@ def load_more_spkr_with_noise(spkr_dir, noise):
     spkr_n, spkr_x = get_and_add_noise(noise, spkr_s)
     return spkr_s, spkr_n, spkr_x
 
-def get_random_dr_f_speakers(dr_idx, num_speakers):    
+def get_random_dr_f_speakers(dr_idx, num_speakers, seed):
     all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in 
                     os.listdir('Data/train/dr{}'.format(dr_idx))if 'Store' not in name]
     f_spkrs = [spkr for spkr in all_spkrs if spkr.split('/')[1][0] == 'f']
-    return random.sample(f_spkrs, num_speakers)
+    np.random.seed(seed)
+    perms = np.random.permutation(len(f_spkrs))[:num_speakers]
+    return [f_spkrs[i] for i in perms]
 
-def get_random_dr_m_speakers(dr_idx, num_speakers):    
+def get_random_dr_m_speakers(dr_idx, num_speakers, seed):
     all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in 
                     os.listdir('Data/train/dr{}'.format(dr_idx))if 'Store' not in name]
     m_spkrs = [spkr for spkr in all_spkrs if spkr.split('/')[1][0] == 'm']
-    return random.sample(m_spkrs, num_speakers)
+    np.random.seed(seed)
+    perms = np.random.permutation(len(m_spkrs))[:num_speakers]
+    return [m_spkrs[i] for i in perms]
 
-def get_random_dr_speakers(dr_idx, num_speakers):
+def get_random_dr_speakers(dr_idx, num_speakers, seed):
     num_f = num_m = num_speakers//2
     if num_speakers % 2 != 0:
         num_f += 1
-    f_spkrs = get_random_dr_f_speakers(dr_idx, num_f)
-    m_spkrs = get_random_dr_m_speakers(dr_idx, num_m)
+    f_spkrs = get_random_dr_f_speakers(dr_idx, num_f, seed)
+    m_spkrs = get_random_dr_m_speakers(dr_idx, num_m, seed)
     fm_spkrs = f_spkrs + m_spkrs
     return fm_spkrs
 
-def get_random_tes(speaker_lists):
+def get_random_tes(speaker_lists, seed):
     dr_idx = np.random.randint(1,9)
     all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in 
                 os.listdir('Data/train/dr{}'.format(dr_idx))
                 if 'Store' not in name 
                 and 'dr{}/{}'.format(dr_idx,name) not in speaker_lists]
+    np.random.seed(seed)
+    perms = np.random.permutation(len(all_spkrs))[0]
     return random.choice(all_spkrs)
 
 def normalize_frqs(max_amp, frqs):
@@ -105,22 +111,25 @@ def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frq
 
 def setup_experiment_data(args):
     noise_frqs = load_noises('Data/Duan')
-    
+    if args.n_noise == 5:
+        noise_idx = np.arange(5)
+    else:
+        noise_idx = np.arange(10)
     # Load trainset
     trs_spkr_lists = []
     for i in range(1,args.n_dr+1):
-        trs_spkr_lists += get_random_dr_speakers(i, args.n_spkr)
+        trs_spkr_lists += get_random_dr_speakers(i, args.n_spkr, args.seed)
     print ("Train Speakers: {}".format(trs_spkr_lists))
     random.shuffle(trs_spkr_lists)
-    trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs)
+    trs, trn, trx = load_trainset(trs_spkr_lists, noise_idx, noise_frqs)
 
     # Load testset
     tes_spkr_lists = []
     for i in range(args.n_test_spkrs):
-        tes_spkr_lists.append(get_random_tes(trs_spkr_lists))
+        tes_spkr_lists.append(get_random_tes(trs_spkr_lists, args.seed))
     print ("Test Speakers: {}".format(tes_spkr_lists))
     random.shuffle(tes_spkr_lists)
-    tes, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs)
+    tes, tex = load_testset(tes_spkr_lists, noise_idx, args.use_only_seen_noises, noise_frqs)
 
     # Normalize
     max_amp = trx.max()

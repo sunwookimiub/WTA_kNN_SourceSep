@@ -87,7 +87,7 @@ def DnC_batch(data, args, is_WTA, pmel_Fs, stft_Fs, Ls=None, epochs=1):
 
 
 def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
-    Ps = []
+    Ps = np.zeros((args.DnC, Ls[0]*2, args.M), dtype=np.int)
     allerrs = []
     stft_start_idx = 0
     pmel_start_idx = 0
@@ -105,7 +105,7 @@ def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
             
         good_P, errs = search_best_P(
                 trX_i, Ls[i], args)
-        Ps.append(good_P)
+        Ps[i] = good_P
         allerrs.append(errs)
         
         stft_start_idx += stft_Fs[i]
@@ -183,7 +183,7 @@ def get_error(sim_x, sim_h, errmetric):
     if errmetric == 'sse':
         err = np.sum(np.power(sim_x - sim_h,2))
     else:
-        err = np.sum(sim_h * np.log(sim_x))
+        err = np.sum(sim_h * np.log(sim_x+1e-20))
     return err
 
 def search_best_P(X, L, args):
@@ -238,3 +238,22 @@ def search_best_P(X, L, args):
             print("Epoch {} t: {:.2f} err: {:.2f}".format(start_idx, times[i], errs[i]))
                     
     return good_Ps, errs
+
+def random_sampling_search(data, args):
+    rs_Ps = None
+    _, T = data['trX_mag'].shape
+    n_sample_frames = T//args.n_rs
+    np.random.seed(args.seed)
+    perms = np.random.permutation(T)
+    for i in range(args.n_rs):
+        newdata = copy.deepcopy(data)
+        newdata['trX_mag'] = newdata['trX_mag'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
+        newdata['IBM'] = newdata['IBM'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
+        search_Ps_i, search_errs = DnC_search_good_Ps(newdata, args, pmel_Fs, stft_Fs, subsample_Ls)
+        if rs_Ps is not None:
+            rs_Ps = np.concatenate((rs_Ps, search_Ps_i),1)
+        else:
+            rs_Ps = search_Ps_i
+        print (rs_Ps.shape)
+
+    return rs_Ps

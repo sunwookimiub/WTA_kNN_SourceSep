@@ -20,9 +20,9 @@ def parse_arguments():
                         help="Search: Number of permutations per search")
 
     
-    parser.add_argument("-n", "--noise_idx", type=int, default=5,
+    parser.add_argument("-n", "--n_noise", type=int, default=5,
                         help="Data: Number of noises (Default: 5)")
-    parser.add_argument("-k", "--n_test_spkrs", type=int, default=8, 
+    parser.add_argument("-q", "--n_test_spkrs", type=int, default=8, 
                         help="Data: Number of test utterances (Default: 8)")
     parser.add_argument("-u", "--use_only_seen_noises", action='store_false',
                         help = "Data: Option to select beyond seen noises")
@@ -65,7 +65,7 @@ def main():
     
     model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})DK({}|{})".format(
         args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
-        args.use_pmel, args.n_noise, args.use_only_seen_noises, args.seed
+        args.use_pmel, args.n_noise, args.use_only_seen_noises, args.seed,
         args.errmetric, args.num_L, int(args.time_th),
         args.L, args.M,
         args.DnC, args.K)

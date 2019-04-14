@@ -90,12 +90,17 @@ def main():
 
     else:
         print ("Running {}...".format(model_nm))
+        
+        recon = librosa.istft(data['teX'] * data['te_IBM'], hop_length=512)
+        true_IBM_snr = SDR(recon, data['tes'])[1]
+        
+        print ("True SNR: {:.2f}".format(true_IBM_snr))
+        
+        _, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+        print("Mean SNR: {:.2f}".format(snr_mean))
 
-        snr_med, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
-        print("Median SNR: {:.2f} Mean SNR: {:.2f}".format(snr_med, snr_mean))
-
-        wta_snr_med, wta_snr_mean, P = DnC_batch(data, args, True, pmel_Fs, stft_Fs, Ls, epochs=1)
-        print("WTA Median SNR: {:.2f} WTA Mean SNR: {:.2f}".format(wta_snr_med, wta_snr_mean))
+        _, wta_snr_mean, P = DnC_batch(data, args, True, pmel_Fs, stft_Fs, Ls, epochs=1)
+        print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
 
     #     # Generate good perms
     #     search_Ps, search_errs = DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls)

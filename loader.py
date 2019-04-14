@@ -129,7 +129,6 @@ def setup_experiment_data(args):
     random.shuffle(trs_spkr_lists)
     trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs, args.seed)
     
-
     # Load testset
     tes_spkr_lists = []
     for i in range(args.n_test_spkrs):

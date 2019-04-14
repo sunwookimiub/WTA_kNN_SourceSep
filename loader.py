@@ -16,7 +16,8 @@ def load_noises(noise_dir):
     noise_frqs = [frqs/frqs.std() for frqs in noise_frqs]
     return noise_frqs
 
-def get_and_add_noise(noise, source, test=False):
+def get_and_add_noise(noise, source, seed, test=False):
+    np.random.seed(seed)
     if test:
         noise_start = 0
     else:
@@ -24,10 +25,10 @@ def get_and_add_noise(noise, source, test=False):
     spkr_noise = noise[noise_start:noise_start + len(source)]
     return spkr_noise, spkr_noise + source
 
-def load_more_spkr_with_noise(spkr_dir, noise):
+def load_more_spkr_with_noise(spkr_dir, noise, seed):
     spkr_frqs = load_spkr(spkr_dir)
     spkr_s = np.concatenate(spkr_frqs, 0)
-    spkr_n, spkr_x = get_and_add_noise(noise, spkr_s)
+    spkr_n, spkr_x = get_and_add_noise(noise, spkr_s, seed)
     return spkr_s, spkr_n, spkr_x
 
 def get_random_dr_f_speakers(dr_idx, num_speakers, seed):
@@ -63,7 +64,7 @@ def get_random_tes(speaker_lists, seed):
                 and 'dr{}/{}'.format(dr_idx,name) not in speaker_lists]
     np.random.seed(seed)
     perms = np.random.permutation(len(all_spkrs))[0]
-    return random.choice(all_spkrs)
+    return all_spkrs[perms]
 
 def normalize_frqs(max_amp, frqs):
     return [frq/max_amp for frq in frqs]
@@ -77,11 +78,11 @@ def get_magnitudes(stfts):
 def get_powermels(stft_mags):
     return [librosa.feature.melspectrogram(S=librosa.power_to_db(stft_mag)) for stft_mag in stft_mags]
 
-def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs):
+def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs, seed):
     trs, trn, trx = [], [], []
     for i, trs_spkr in enumerate(trs_spkr_lists):
         for noise_idx in noise_idx_list:
-            s, n, x = load_more_spkr_with_noise('Data/train/{}'.format(trs_spkr), noise_frqs[noise_idx]) 
+            s, n, x = load_more_spkr_with_noise('Data/train/{}'.format(trs_spkr), noise_frqs[noise_idx], seed) 
             trs.append(s)
             trn.append(n)
             trx.append(x)
@@ -90,7 +91,7 @@ def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs):
     trx = np.concatenate(trx).ravel()
     return trs, trn, trx
 
-def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs):
+def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frqs, seed):
     tes, _, tex = [], [], []
     if use_only_seen_noises:
         noise_idx = np.random.choice(noise_idx_list)
@@ -100,7 +101,7 @@ def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frq
     for i, tes_spkr in enumerate(tes_spkr_lists):
         tes_list = load_spkr('Data/train/{}'.format(tes_spkr))
         spkr_s = tes_list[np.random.randint(0,len(tes_list))]
-        spkr_n, spkr_x = get_and_add_noise(noise_frqs[noise_idx], spkr_s)
+        spkr_n, spkr_x = get_and_add_noise(noise_frqs[noise_idx], spkr_s, seed)
         tes.append(spkr_s)
         tex.append(spkr_x)
     tes = np.concatenate(tes).ravel()
@@ -111,27 +112,27 @@ def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frq
 
 def setup_experiment_data(args):
     noise_frqs = load_noises('Data/Duan')
-    if args.n_noise == 5:
-        noise_idx = np.arange(5)
-    elif args.n_noise == 10:
-        noise_idx = np.arange(10)
-    else:
-        noise_idx = [5]
+        
     # Load trainset
     trs_spkr_lists = []
     for i in range(1,args.n_dr+1):
         trs_spkr_lists += get_random_dr_speakers(i, args.n_spkr, args.seed)
     print ("Train Speakers: {}".format(trs_spkr_lists))
+    random.seed(args.seed)
     random.shuffle(trs_spkr_lists)
-    trs, trn, trx = load_trainset(trs_spkr_lists, noise_idx, noise_frqs)
+    trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs, args.seed)
+    
 
     # Load testset
     tes_spkr_lists = []
     for i in range(args.n_test_spkrs):
-        tes_spkr_lists.append(get_random_tes(trs_spkr_lists, args.seed))
+        spkr = get_random_tes(trs_spkr_lists, args.seed)
+        tes_spkr_lists.append(spkr)
+        trs_spkr_lists.append(spkr)
     print ("Test Speakers: {}".format(tes_spkr_lists))
+    random.seed(args.seed)
     random.shuffle(tes_spkr_lists)
-    tes, tex = load_testset(tes_spkr_lists, noise_idx, args.use_only_seen_noises, noise_frqs)
+    tes, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
 
     # Normalize
     max_amp = trx.max()

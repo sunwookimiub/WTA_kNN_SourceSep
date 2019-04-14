@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
 import matplotlib.pyplot as plt
-import _pickle as pickle
 import os
 
 from loader import *
@@ -20,8 +19,8 @@ def parse_arguments():
                         help="Search: Number of permutations per search")
 
     
-    parser.add_argument("-n", "--n_noise", type=int, default=5,
-                        help="Data: Number of noises (Default: 5)")
+    parser.add_argument("--noise_idx", type=int, nargs='*', default=[2],
+                        help="Noises (e.g. '5 6' gives 5th and 6th noise [cicada, birds]. Default: 5)")
     parser.add_argument("-q", "--n_test_spkrs", type=int, default=8, 
                         help="Data: Number of test utterances (Default: 8)")
     parser.add_argument("-u", "--use_only_seen_noises", action='store_false',
@@ -51,11 +50,15 @@ def parse_arguments():
     parser.add_argument("-s", "--is_save", action='store_true',
                         help = "Search: Option to save searched permutations")
     
+    parser.add_argument("-b", "--is_debug", action='store_true',
+                help = "Debugging: Denoising performance analysis")
+    
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
+    np.random.seed(args.seed)
 
     data = setup_experiment_data(args)
     
@@ -65,26 +68,42 @@ def main():
     
     model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})".format(
         args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
-        args.use_pmel, args.n_noise, args.use_only_seen_noises, args.seed,
+        args.use_pmel, args.noise_idx, args.use_only_seen_noises, args.seed,
         args.errmetric, args.num_L, int(args.time_th),
         args.L, args.M,
         args.DnC, args.K)
-    print ("Running {}...".format(model_nm))
     
-    snr_med, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
-    print("Median SNR: {:.2f} Mean SNR: {:.2f}".format(snr_med, snr_mean))
-    
-    wta_snr_med, wta_snr_mean, P = DnC_batch(data, args, True, pmel_Fs, stft_Fs, Ls, epochs=1)
-    print("WTA Median SNR: {:.2f} WTA Mean SNR: {:.2f}".format(wta_snr_med, wta_snr_mean))
-    
-    # Generate good perms
-    search_Ps, search_errs = DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls)
-    search_snr_med, search_snr_mean, errs = DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, search_Ps)
-    plot_results(snr_med, snr_mean, wta_snr_med, wta_snr_mean, search_snr_med, search_snr_mean, model_nm)
-    
-    if args.is_save:
-        np.save(model_nm, good_Ps)
-        print ("Saved")
+    if args.is_debug:
+        seeded_snr_means = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
+        tot_seeds = 1000
+        for seed in range(tot_seeds):
+            args.seed = seed
+            np.random.seed(args.seed)
+            args.noise_idx = [seed % 10]
+            data = setup_experiment_data(args)
+            _, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+            seeded_snr_means[str(args.noise_idx[0])] += snr_mean
+        snrs = [seeded_snr_means[str(idx)]/(tot_seeds/10) for idx in range (10)]
+        plt.bar(np.arange(10), height=snrs)
+        plt.savefig("DEBUG_" + model_nm)
+
+    else:
+        print ("Running {}...".format(model_nm))
+
+        snr_med, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+        print("Median SNR: {:.2f} Mean SNR: {:.2f}".format(snr_med, snr_mean))
+
+        wta_snr_med, wta_snr_mean, P = DnC_batch(data, args, True, pmel_Fs, stft_Fs, Ls, epochs=1)
+        print("WTA Median SNR: {:.2f} WTA Mean SNR: {:.2f}".format(wta_snr_med, wta_snr_mean))
+
+    #     # Generate good perms
+    #     search_Ps, search_errs = DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls)
+    #     search_snr_med, search_snr_mean, errs = DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, search_Ps)
+    #     plot_results(snr_med, snr_mean, wta_snr_med, wta_snr_mean, search_snr_med, search_snr_mean, model_nm)
+
+    #     if args.is_save:
+    #         np.save(model_nm, good_Ps)
+    #         print ("Saved")
 
 if __name__ == "__main__":
     main()

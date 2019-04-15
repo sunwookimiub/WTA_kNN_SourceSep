@@ -114,7 +114,7 @@ def DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, Ps):
     skip_n = Ls[0]
     errs = np.zeros((skip_n, args.DnC))
     snr_mean_all = np.zeros(skip_n)
-    
+    model_nm = get_model_nm(args)
 
     for j in range(skip_n):
         stft_start_idx = 0
@@ -148,6 +148,7 @@ def DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, Ps):
         snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
         snr_mean_all[j] = snr_mean_sk
         if j % args.print_every == 0:
+            print (model_nm, end='| ')
             print ("{} {} {:.2f} {}".format(j,j+skip_n, snr_mean_sk, errs[j]))
 
     return snr_mean_all, errs
@@ -183,6 +184,7 @@ def get_error(sim_x, sim_h, errmetric):
     return err
 
 def search_best_P(X, L, args):
+    model_nm = get_model_nm(args)
     F, _ = X.shape
     
     # Inits
@@ -228,9 +230,11 @@ def search_best_P(X, L, args):
         errs[i], times[i] = err, time.time() - toc
         if times[i] > args.time_th and not fix_err and i > 20:
                 fix_err = True
+                print (model_nm, end='| ')
                 print ("Fixed at epoch {} for taking {:.2f}s".format(start_idx, times[i]))
                 
         if start_idx % args.print_every == 0:
+            print (model_nm, end='| ')
             print("Epoch {} t: {:.2f} err: {:.2f}".format(start_idx, times[i], errs[i]))
                     
     return good_Ps, errs

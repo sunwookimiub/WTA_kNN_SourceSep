@@ -69,7 +69,6 @@ def main():
     subsample_Ls = Ls//args.n_rs
 
     model_nm = get_model_nm(args)
-
     
     if args.is_debug:
         debug_ind_noise_snr(data, args, pmel_Fs, stft_Fs, model_nm)

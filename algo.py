@@ -115,33 +115,40 @@ def DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, Ps):
     errs = np.zeros((skip_n, args.DnC))
     snr_mean_all = np.zeros(skip_n)
     model_nm = get_model_nm(args)
+    teX_rs, trX_rs, IBM_rs, sim_x_rs= [], [], [], []
+    stft_start_idx = 0
+    pmel_start_idx = 0
+    for i in range(args.DnC):
+        stft_end_idx = stft_start_idx + stft_Fs[i]
+        pmel_end_idx = pmel_start_idx + pmel_Fs[i]
 
+        IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
+        if args.use_pmel:
+            teX_i = data['teX_mag_pmel'][pmel_start_idx:pmel_end_idx]
+            trX_i = data['trX_mag_pmel'][pmel_start_idx:pmel_end_idx]
+        else:
+            teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
+            trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
+
+        sim_x = get_sim_matrix(trX_i, 'cosine', args.errmetric)
+        
+        teX_rs.append(teX_i)
+        trX_rs.append(trX_i)
+        IBM_rs.append(IBM_i)
+        sim_x_rs.append(sim_x)
+        
+        stft_start_idx += stft_Fs[i]
+        pmel_start_idx += pmel_Fs[i]
+    
     for j in range(skip_n):
-        stft_start_idx = 0
-        pmel_start_idx = 0
         IBM_Mean_i = []
         for i in range(args.DnC):
-            stft_end_idx = stft_start_idx + stft_Fs[i]
-            pmel_end_idx = pmel_start_idx + pmel_Fs[i]
-            
-            IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
-            if args.use_pmel:
-                teX_i = data['teX_mag_pmel'][pmel_start_idx:pmel_end_idx]
-                trX_i = data['trX_mag_pmel'][pmel_start_idx:pmel_end_idx]
-            else:
-                teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
-                trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
-            
-            sim_x = get_sim_matrix(trX_i, 'cosine', args.errmetric)
-
+            teX_i, trX_i, IBM_i, sim_x = teX_rs[i], trX_rs[i], IBM_rs[i], sim_x_rs[i]
             P = Ps[i][j:j+skip_n]
             sim_h = get_sim_matrix(trX_i, 'hamming', args.errmetric, P)
             errs[j,i] = get_error(sim_x, sim_h, args.errmetric)
             IBM_Mean = get_IBM_from_pairwise_dist(teX_i, trX_i, IBM_i, args.K, 'hamming', P)
             IBM_Mean_i.append(IBM_Mean)
-            
-            stft_start_idx += stft_Fs[i]
-            pmel_start_idx += pmel_Fs[i]
 
         IBM_Mean_sk = np.concatenate(IBM_Mean_i)        
         tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean_sk, hop_length=512)

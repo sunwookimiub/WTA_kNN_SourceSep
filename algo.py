@@ -3,6 +3,8 @@ import librosa
 import time
 import copy
 from utils import *
+import _pickle as pickle
+from loader import setup_experiment_data
 from sklearn.metrics import pairwise_distances as pdist
 
 # Reconstruction helper functions
@@ -295,18 +297,22 @@ def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
 
 def debug_ind_noise_snr(data, args, pmel_Fs, stft_Fs, model_nm):
     seeded_snr_means = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
-    tot_seeds = 100
+    tot_seeds = 300
     for seed in range(tot_seeds):
         args.seed = seed
         np.random.seed(args.seed)
         args.noise_idx = [seed % 10]
         data = setup_experiment_data(args)
-        _, snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+        snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
         print (seed, snr_mean)
         seeded_snr_means[str(args.noise_idx[0])] += snr_mean
     snrs = [seeded_snr_means[str(idx)]/(tot_seeds/10) for idx in range (10)]
     plt.bar(np.arange(10), height=snrs)
-    plt.savefig("DEBUG_" + model_nm)
+    model_nm = "DEBUG_" + model_nm
+    plt.savefig(model_nm)
+    pickle.dump(seeded_snr_means, open("{}.pkl".format(model_nm),"wb"))
+    print ("Saved")
+    
     
 def load_model_and_get_max(model_nm, data, args, pmel_Fs, stft_Fs, Ls):
     search_Ps = np.load(model_nm)

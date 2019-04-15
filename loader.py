@@ -55,7 +55,6 @@ def get_random_dr_speakers(dr_idx, num_speakers, seed):
             num_f += 1
         else:
             num_m += 1
-    print (num_speakers)
     f_spkrs = get_random_dr_f_speakers(dr_idx, num_f, seed)
     m_spkrs = get_random_dr_m_speakers(dr_idx, num_m, seed)
     fm_spkrs = f_spkrs + m_spkrs

@@ -26,8 +26,8 @@ def parse_arguments():
                         help="Data: Number of test utterances (Default: 10)")
     parser.add_argument("-u", "--use_only_seen_noises", action='store_false',
                         help = "Data: Option to select beyond seen noises")
-    parser.add_argument("-e", "--use_pmel", action='store_true',
-                        help = "Data: Option to use power mel spectrogram")
+    parser.add_argument("-e", "--use_mel", action='store_true',
+                        help = "Data: Option to use mel spectrogram")
     parser.add_argument("-c", "--seed", type=int, default=22,
                         help = "Data: Seed for train and test speaker selection")
     parser.add_argument("-r", "--n_rs", type=int, default=1,
@@ -63,7 +63,7 @@ def main():
 
     data = setup_experiment_data(args)
     
-    pmel_Fs = get_DnC_FL_divs(args.DnC, 128)
+    mel_Fs = get_DnC_FL_divs(args.DnC, 128)
     stft_Fs = get_DnC_FL_divs(args.DnC, 513)
     Ls = get_DnC_FL_divs(args.DnC, args.L)
     subsample_Ls = Ls//args.n_rs
@@ -71,7 +71,7 @@ def main():
     model_nm = get_model_nm(args)
     
     if args.is_debug:
-        debug_ind_noise_snr(data, args, pmel_Fs, stft_Fs, model_nm)
+        debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm)
 
     else:
         print ("Running {}...".format(model_nm))
@@ -81,16 +81,15 @@ def main():
         
         print ("True SNR: {:.2f}".format(snr_true))
         
-        snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+        snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         print("Mean SNR: {:.2f}".format(snr_mean))
 
-        wta_snr_mean, P = DnC_batch(data, args, True, pmel_Fs, stft_Fs, Ls, epochs=1)
+        wta_snr_mean, P = DnC_batch(data, args, True, mel_Fs, stft_Fs, Ls, epochs=1)
         print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
 
         # Generate good perms
-#         search_Ps, search_errs = DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls)
-        search_Ps = random_sampling_search(data, args, pmel_Fs, stft_Fs, Ls, subsample_Ls)
-        search_snr_mean, errs = DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, search_Ps)
+        search_Ps = random_sampling_search(data, args, mel_Fs, stft_Fs, Ls, subsample_Ls)
+        search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
         plot_results(snr_true, snr_mean, wta_snr_mean, search_snr_mean, model_nm)
 
         if args.is_save:

@@ -64,7 +64,7 @@ class model_argparse():
         self.noise_idx = None
         self.n_test_spkrs = None
         self.use_only_seen_noises = None
-        self.use_pmel = None
+        self.use_mel = None
         self.seed = None
         self.n_rs = None
         
@@ -90,7 +90,7 @@ class model_argparse():
         self.n_spkr = int(first_split[1])
         self.n_test_spkrs = int(first_split[2])
         self.n_rs = int(first_split[3])
-        self.use_pmel = True if first_split[4] == 'True' else False
+        self.use_mel = True if first_split[4] == 'True' else False
         self.noise_idx = list(map(int, first_split[5].replace("[", "").replace("]", "").split(',')))
         self.use_only_seen_noises = bool(first_split[6])
         self.seed = int(first_split[7])
@@ -107,9 +107,9 @@ class model_argparse():
 
 
 def get_model_nm(args):        
-    model_nm = "DSTRPNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})".format(
+    model_nm = "DSTRMNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})".format(
         args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
-        args.use_pmel, args.noise_idx, args.use_only_seen_noises, args.seed,
+        args.use_mel, args.noise_idx, args.use_only_seen_noises, args.seed,
         args.errmetric, args.num_L, int(args.time_th),
         args.L, args.M,
         args.DnC, args.K)

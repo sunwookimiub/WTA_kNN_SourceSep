@@ -79,8 +79,8 @@ def stft_transform(frqs):
 def get_magnitudes(stfts):
     return [np.abs(stft) for stft in stfts]
 
-def get_powermels(stft_mags):
-    return [librosa.feature.melspectrogram(S=librosa.power_to_db(stft_mag)) for stft_mag in stft_mags]
+def get_mels(stft_mags):
+    return [librosa.feature.melspectrogram(S=stft_mag) for stft_mag in stft_mags]
 
 def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs, seed):
     trs, trn, trx = [], [], []
@@ -154,11 +154,11 @@ def setup_experiment_data(args):
     IBM = (trS_mag > trN_mag)*1
     te_IBM = (teS_mag > teN_mag)*1
     
-    # Power mel-spectrogram
-    trX_mag_pmel, teX_mag_pmel = get_powermels([trX_mag, teX_mag])
+    # Mel spectrogram
+    trX_mag_mel, teX_mag_mel = get_mels([trX_mag, teX_mag])
 
     data = {'tes': tes, 'teX': teX, 'te_IBM': te_IBM, 
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
-            'trX_mag_pmel': trX_mag_pmel, 'teX_mag_pmel': teX_mag_pmel}
+            'trX_mag_mel': trX_mag_mel, 'teX_mag_mel': teX_mag_mel}
     
     return data

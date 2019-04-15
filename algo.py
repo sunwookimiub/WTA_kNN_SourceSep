@@ -36,7 +36,7 @@ def get_DnC_FL_divs(DnC, F_or_L):
     F_or_Ls[0] += F_or_L%DnC
     return F_or_Ls
 
-def DnC_batch(data, args, is_WTA, pmel_Fs, stft_Fs, Ls=None, epochs=1): 
+def DnC_batch(data, args, is_WTA, mel_Fs, stft_Fs, Ls=None, epochs=1): 
     pdist_metric = 'cosine'
     P=None
     Ps = np.zeros((args.L, args.M), dtype=np.int)
@@ -45,25 +45,25 @@ def DnC_batch(data, args, is_WTA, pmel_Fs, stft_Fs, Ls=None, epochs=1):
     for j in range(epochs):
         IBMEstMean = np.zeros(data['teX'].shape)
         stft_start_idx = 0
-        pmel_start_idx = 0
+        mel_start_idx = 0
         if is_WTA:
             P_start_idx = 0
         
         for i in range(args.DnC):
             stft_end_idx = stft_start_idx + stft_Fs[i]
-            pmel_end_idx = pmel_start_idx + pmel_Fs[i]
+            mel_end_idx = mel_start_idx + mel_Fs[i]
             
             IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
-            if args.use_pmel:
-                teX_i = data['teX_mag_pmel'][pmel_start_idx:pmel_end_idx]
-                trX_i = data['trX_mag_pmel'][pmel_start_idx:pmel_end_idx]
+            if args.use_mel:
+                teX_i = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
+                trX_i = data['trX_mag_mel'][mel_start_idx:mel_end_idx]
             else:
                 teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
                 trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
             
             if is_WTA:
-                if args.use_pmel:
-                    P = create_permutation(pmel_Fs[i], Ls[i], args.M)
+                if args.use_mel:
+                    P = create_permutation(mel_Fs[i], Ls[i], args.M)
                 else:
                     P = create_permutation(stft_Fs[i], Ls[i], args.M)
                 P_end_idx = P_start_idx + Ls[i]
@@ -75,7 +75,7 @@ def DnC_batch(data, args, is_WTA, pmel_Fs, stft_Fs, Ls=None, epochs=1):
                                             teX_i, trX_i, IBM_i, args.K, pdist_metric, P)
 
             stft_start_idx += stft_Fs[i]
-            pmel_start_idx += pmel_Fs[i]
+            mel_start_idx += mel_Fs[i]
             
         tesReconMean = librosa.istft(data['teX'] * IBMEstMean, hop_length=512)
         sdr_mean[j] = SDR(tesReconMean, data['tes'])[1]
@@ -85,19 +85,19 @@ def DnC_batch(data, args, is_WTA, pmel_Fs, stft_Fs, Ls=None, epochs=1):
     return sdr_mean.mean()
 
 
-def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
+def DnC_search_good_Ps(data, args, mel_Fs, stft_Fs, Ls):
     Ps = np.zeros((args.DnC, Ls[0]*2, args.M), dtype=np.int)
     allerrs = []
     stft_start_idx = 0
-    pmel_start_idx = 0
+    mel_start_idx = 0
     for i in range(args.DnC):
         stft_end_idx = stft_start_idx + stft_Fs[i]
-        pmel_end_idx = pmel_start_idx + pmel_Fs[i]
+        mel_end_idx = mel_start_idx + mel_Fs[i]
 
         IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
-        if args.use_pmel:
-            teX_i = data['teX_mag_pmel'][pmel_start_idx:pmel_end_idx]
-            trX_i = data['trX_mag_pmel'][pmel_start_idx:pmel_end_idx]
+        if args.use_mel:
+            teX_i = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
+            trX_i = data['trX_mag_mel'][mel_start_idx:mel_end_idx]
         else:
             teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
             trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
@@ -108,26 +108,26 @@ def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
         allerrs.append(errs)
         
         stft_start_idx += stft_Fs[i]
-        pmel_start_idx += pmel_Fs[i]
+        mel_start_idx += mel_Fs[i]
         
     return Ps, allerrs
 
-def DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, Ps):
+def DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, Ps):
     skip_n = Ls[0]
     errs = np.zeros((skip_n, args.DnC))
     snr_mean_all = np.zeros(skip_n)
     model_nm = get_model_nm(args)
     teX_rs, trX_rs, IBM_rs, sim_x_rs= [], [], [], []
     stft_start_idx = 0
-    pmel_start_idx = 0
+    mel_start_idx = 0
     for i in range(args.DnC):
         stft_end_idx = stft_start_idx + stft_Fs[i]
-        pmel_end_idx = pmel_start_idx + pmel_Fs[i]
+        mel_end_idx = mel_start_idx + mel_Fs[i]
 
         IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
-        if args.use_pmel:
-            teX_i = data['teX_mag_pmel'][pmel_start_idx:pmel_end_idx]
-            trX_i = data['trX_mag_pmel'][pmel_start_idx:pmel_end_idx]
+        if args.use_mel:
+            teX_i = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
+            trX_i = data['trX_mag_mel'][mel_start_idx:mel_end_idx]
         else:
             teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
             trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
@@ -140,7 +140,7 @@ def DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, Ps):
         sim_x_rs.append(sim_x)
         
         stft_start_idx += stft_Fs[i]
-        pmel_start_idx += pmel_Fs[i]
+        mel_start_idx += mel_Fs[i]
     
     for j in range(skip_n):
         IBM_Mean_i = []
@@ -248,7 +248,7 @@ def search_best_P(X, L, args):
                     
     return good_Ps, errs
 
-def random_sampling_search(data, args, pmel_Fs, stft_Fs, Ls, subsample_Ls):
+def random_sampling_search(data, args, mel_Fs, stft_Fs, Ls, subsample_Ls):
     rs_Ps = None
     _, T = data['trX_mag'].shape
     n_sample_frames = T//args.n_rs
@@ -258,7 +258,7 @@ def random_sampling_search(data, args, pmel_Fs, stft_Fs, Ls, subsample_Ls):
         newdata = copy.deepcopy(data)
         newdata['trX_mag'] = newdata['trX_mag'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
         newdata['IBM'] = newdata['IBM'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
-        search_Ps_i, search_errs = DnC_search_good_Ps(newdata, args, pmel_Fs, stft_Fs, subsample_Ls)
+        search_Ps_i, search_errs = DnC_search_good_Ps(newdata, args, mel_Fs, stft_Fs, subsample_Ls)
         if rs_Ps is not None:
             rs_Ps = np.concatenate((rs_Ps, search_Ps_i),1)
         else:
@@ -267,19 +267,19 @@ def random_sampling_search(data, args, pmel_Fs, stft_Fs, Ls, subsample_Ls):
 
     return rs_Ps
 
-def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
+def DnC_search_good_Ps(data, args, mel_Fs, stft_Fs, Ls):
     Ps = np.zeros((args.DnC, Ls[0]*2, args.M), dtype=np.int)
     allerrs = []
     stft_start_idx = 0
-    pmel_start_idx = 0
+    mel_start_idx = 0
     for i in range(args.DnC):
         stft_end_idx = stft_start_idx + stft_Fs[i]
-        pmel_end_idx = pmel_start_idx + pmel_Fs[i]
+        mel_end_idx = mel_start_idx + mel_Fs[i]
 
         IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
-        if args.use_pmel:
-            teX_i = data['teX_mag_pmel'][pmel_start_idx:pmel_end_idx]
-            trX_i = data['trX_mag_pmel'][pmel_start_idx:pmel_end_idx]
+        if args.use_mel:
+            teX_i = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
+            trX_i = data['trX_mag_mel'][mel_start_idx:mel_end_idx]
         else:
             teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
             trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
@@ -290,14 +290,14 @@ def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
         allerrs.append(errs)
         
         stft_start_idx += stft_Fs[i]
-        pmel_start_idx += pmel_Fs[i]
+        mel_start_idx += mel_Fs[i]
         
     return Ps, allerrs
 
 
-def debug_ind_noise_snr(data, args, pmel_Fs, stft_Fs, model_nm):
+def debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm):
     stft_snrs = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
-    pmel_snrs = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
+    mel_snrs = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
     tot_seeds = 300
     for seed in range(tot_seeds):
         args.seed = seed
@@ -305,30 +305,30 @@ def debug_ind_noise_snr(data, args, pmel_Fs, stft_Fs, model_nm):
         args.noise_idx = [seed % 10]
         data = setup_experiment_data(args)
         
-        args.use_pmel = False
-        snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
+        args.use_mel = False
+        snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         stft_snrs[str(args.noise_idx[0])] += snr_mean
         
-        args.use_pmel = True
-        snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
-        pmel_snrs[str(args.noise_idx[0])] += snr_mean
+        args.use_mel = True
+        snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
+        mel_snrs[str(args.noise_idx[0])] += snr_mean
         
         if seed % 10 == 0 and seed > 1:
             norm_stft_snrs = [stft_snrs[str(idx)]/(seed/10) for idx in range (10)]
-            norm_pmel_snrs = [pmel_snrs[str(idx)]/(seed/10) for idx in range (10)]
+            norm_mel_snrs = [mel_snrs[str(idx)]/(seed/10) for idx in range (10)]
             print (seed)
             print (norm_stft_snrs)
-            print (norm_pmel_snrs)
+            print (norm_mel_snrs)
         
     norm_stft_snrs = [stft_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
-    norm_pmel_snrs = [pmel_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
+    norm_mel_snrs = [mel_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
     plt.bar(np.arange(10), height=norm_stft_snrs, alpha=0.9)
-    plt.bar(np.arange(10), height=norm_pmel_snrs, alpha=0.7)
+    plt.bar(np.arange(10), height=norm_mel_snrs, alpha=0.7)
     model_nm = "DEBUG_" + model_nm
     plt.savefig(model_nm)
     
     
-def load_model_and_get_max(model_nm, data, args, pmel_Fs, stft_Fs, Ls):
+def load_model_and_get_max(model_nm, data, args, mel_Fs, stft_Fs, Ls):
     search_Ps = np.load(model_nm)
-    search_snr_mean, errs = DnC_analyze_good_Ps(data, args, pmel_Fs, stft_Fs, Ls, search_Ps)
+    search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
     return search_snr_mean.max()

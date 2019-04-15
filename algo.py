@@ -298,28 +298,32 @@ def DnC_search_good_Ps(data, args, pmel_Fs, stft_Fs, Ls):
 def debug_ind_noise_snr(data, args, pmel_Fs, stft_Fs, model_nm):
     stft_snrs = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
     pmel_snrs = {'0': 0, '1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0, '7': 0, '8': 0, '9': 0}
-    tot_seeds = 50
+    tot_seeds = 300
     for seed in range(tot_seeds):
         args.seed = seed
         np.random.seed(args.seed)
         args.noise_idx = [seed % 10]
-        args.use_pmel = False
         data = setup_experiment_data(args)
+        
+        args.use_pmel = False
         snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
         stft_snrs[str(args.noise_idx[0])] += snr_mean
         
         args.use_pmel = True
-        data = setup_experiment_data(args)
         snr_mean = DnC_batch(data, args, False, pmel_Fs, stft_Fs)
-        stft_snrs[str(args.noise_idx[0])] += snr_mean
+        pmel_snrs[str(args.noise_idx[0])] += snr_mean
         
-        if seed % 50 == 0:
+        if seed % 10 == 0 and seed > 1:
+            norm_stft_snrs = [stft_snrs[str(idx)]/(seed/10) for idx in range (10)]
+            norm_pmel_snrs = [pmel_snrs[str(idx)]/(seed/10) for idx in range (10)]
             print (seed)
+            print (norm_stft_snrs)
+            print (norm_pmel_snrs)
         
     norm_stft_snrs = [stft_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
     norm_pmel_snrs = [pmel_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
-    plt.bar(np.arange(10), height=norm_stft_snrs)
-    plt.bar(np.arange(10), height=norm_pmel_snrs)
+    plt.bar(np.arange(10), height=norm_stft_snrs, alpha=0.9)
+    plt.bar(np.arange(10), height=norm_pmel_snrs, alpha=0.7)
     model_nm = "DEBUG_" + model_nm
     plt.savefig(model_nm)
     

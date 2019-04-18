@@ -2,6 +2,7 @@ import os
 import random
 import librosa
 import numpy as np
+from utils import get_IRM
 
 def load_spkr(spkr_dir):
     spkr_files = [x for x in os.listdir(spkr_dir) if 'wav' in x]
@@ -150,12 +151,12 @@ def setup_experiment_data(args):
     trS, trN, trX, teS, teN, teX = stft_transform([trs, trn, trx, tes, ten, tex])
     trS_mag, trN_mag, trX_mag, teS_mag, teN_mag, teX_mag = get_magnitudes([trS, trN, trX, teS, teN, teX])
     IBM = (trS_mag > trN_mag)*1
-    te_IBM = (teS_mag > teN_mag)*1
+    te_IRM = get_IRM(teS_mag, teN_mag)
     
     # Mel spectrogram
     trX_mag_mel, teX_mag_mel = get_mels([trX_mag, teX_mag])
 
-    data = {'tes': tes, 'teX': teX, 'te_IBM': te_IBM, 
+    data = {'tes': tes, 'teX': teX, 'te_IRM': te_IRM, 
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
             'trX_mag_mel': trX_mag_mel, 'teX_mag_mel': teX_mag_mel}
     

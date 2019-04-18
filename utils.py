@@ -165,3 +165,6 @@ def viz_res(file_dir, title):
     axarr[2].bar(np.arange(10), height=avg_search_perfs, alpha = 0.7)
     axarr[2].set_ylim(-10,20)
     f.suptitle(title)
+    
+def get_IRM(S, N):
+    return np.power(S,2) / (np.power(S,2) + np.power(N,2))

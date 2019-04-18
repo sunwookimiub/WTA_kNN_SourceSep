@@ -77,10 +77,10 @@ def main():
     else:
         print ("Running {}...".format(model_nm))
         
-        recon = librosa.istft(data['teX'] * data['te_IBM'], hop_length=512)
+        recon = librosa.istft(data['teX'] * data['te_IRM'], hop_length=512)
         snr_true = SDR(recon, data['tes'])[1]
         
-        print ("True SNR: {:.2f}".format(snr_true))
+        print ("Oracle SNR: {:.2f}".format(snr_true))
         
         snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         print("Mean SNR: {:.2f}".format(snr_mean))

@@ -10,9 +10,7 @@ def load_spkr(spkr_dir):
     return spkr_frqs
 
 def load_noises(noise_dir):
-#     noise_files = os.listdir(noise_dir)
-#     print (noise_files)
-    noise_files = ['computerkeyboard.wav', 'eatingchips.wav', 'motorcycles.wav', 'casino.wav', 'frogs.wav', 'machineguns.wav', 'birds.wav', 'jungle.wav', 'cicadas.wav', 'ocean.wav']
+    noise_files = ['birds.wav', 'casino.wav', 'cicadas.wav', 'computerkeyboard.wav', 'eatingchips.wav', 'frogs.wav', 'jungle.wav', 'machineguns.wav', 'motorcycles.wav', 'ocean.wav']
     noise_frqs = [librosa.load('{}/{}'.format(noise_dir, x), sr=16000)[0] for x in noise_files]
     noise_frqs = [frqs/frqs.std() for frqs in noise_frqs]
     return noise_frqs

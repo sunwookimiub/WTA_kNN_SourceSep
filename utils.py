@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import _pickle as pickle
 
 def SDR(s,sr):
     eps=1e-20
@@ -119,3 +120,48 @@ def get_model_nm(args):
         args.DnC, args.K,
         args.screen)
     return model_nm
+
+def viz_res(file_dir, title):
+    true_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    knn_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    wta_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    search_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    cnts = {k:v for k, v in zip(np.arange(10), np.zeros(10, dtype=np.int))}
+    model_names = {k:[] for k in np.arange(10)}
+
+    files = [x for x in os.listdir(file_dir) if '.pkl' in x]
+    for model in files:
+        f_args = model_argparse(model)
+        nidx = f_args.noise_idx
+        file_check = f_args.errmetric == errm and f_args.use_mel == umel and f_args.n_dr == n_dr
+        file_check = file_check and f_args.n_spkr == n_spkr and f_args.n_rs == n_rs and f_args.num_L == num_L
+
+        if file_check:
+            n = f_args.noise_idx[0]
+            with open(file_dir + model, "rb") as input_file:
+                e = pickle.load(input_file)
+
+            true_perfs[n] += e['snr_true']
+            knn_perfs[n] += e['snr_mean']
+            wta_perfs[n] += e['wta_snr_mean']
+            search_perfs[n] += e['search_snr_mean_max']
+            cnts[n] += 1
+            model_names[n].append(model)
+
+    avg_true_perfs = [true_perfs[idx]/cnts[idx] for idx in range (10)]
+    avg_knn_perfs = [knn_perfs[idx]/cnts[idx] for idx in range (10)]
+    avg_wta_perfs = [wta_perfs[idx]/cnts[idx] for idx in range (10)]
+    avg_search_perfs = [search_perfs[idx]/cnts[idx] for idx in range (10)]
+
+    f, axarr = plt.subplots(1, 3, figsize=(12,4))
+    axarr[0].set_title('Counts')
+    axarr[0].bar(np.arange(10), height=[cnts[k] for k in range(10)])
+    axarr[1].set_title('True vs kNN')
+    axarr[1].bar(np.arange(10), height=avg_true_perfs, alpha = 0.9)
+    axarr[1].bar(np.arange(10), height=avg_knn_perfs, alpha = 0.7)
+    axarr[1].set_ylim(-10,20)
+    axarr[2].set_title('WTA vs Search')
+    axarr[2].bar(np.arange(10), height=avg_wta_perfs, alpha = 0.9)
+    axarr[2].bar(np.arange(10), height=avg_search_perfs, alpha = 0.7)
+    axarr[2].set_ylim(-10,20)
+    f.suptitle(title)

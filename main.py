@@ -9,7 +9,8 @@ from algo import *
 
 def parse_arguments():
     parser = ArgumentParser()
-    
+    parser.add_argument("screen", type=str,
+                        help = "Misc: Screen session being run on")
     parser.add_argument("n_dr", type=int, 
                             help="Data: Number of dialects")
     parser.add_argument("n_spkr", type=int, 

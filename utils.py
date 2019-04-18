@@ -56,6 +56,7 @@ def plot_results(snr_true, snr_mean, wta_snr_mean, search_snr_mean, model_nm):
 
 class model_argparse():
     def __init__(self, model_nm):
+        self.screen = None
         self.n_dr = None
         self.n_spkr = None
         self.errmetric = None
@@ -85,6 +86,9 @@ class model_argparse():
         second_split = split_nm[1].split('(')[1].split(')')[0].split('|')
         third_split = split_nm[2].split('(')[1].split(')')[0].split('|')
         fourth_split = split_nm[3].split('(')[1].split(')')[0].split('|')
+        if len(split_nm) > 4:
+            fifth_split = split_nm[4].split('(')[1].split(')')[0]
+            self.screen = fifth_split
         
         self.n_dr = int(first_split[0])
         self.n_spkr = int(first_split[1])
@@ -107,10 +111,11 @@ class model_argparse():
 
 
 def get_model_nm(args):        
-    model_nm = "DSTRMNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})".format(
+    model_nm = "DSTRMNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})_S({})".format(
         args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
         args.use_mel, args.noise_idx, args.use_only_seen_noises, args.seed,
         args.errmetric, args.num_L, int(args.time_th),
         args.L, args.M,
-        args.DnC, args.K)
+        args.DnC, args.K,
+        args.screen)
     return model_nm

@@ -342,15 +342,15 @@ def debug_wta_snr(args, mel_Fs, stft_Fs, Ls):
         snr_true = SDR(recon, data['tes'])[1]
 
         print ("True SNR: {:.2f}".format(snr_true))
-        true_ones[i] += snr_true
+        true_ones[ni] += snr_true
 
         snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         print("Mean SNR: {:.2f}".format(snr_mean))
-        knn_ones[i] += snr_mean
+        knn_ones[ni] += snr_mean
 
         wta_snr_mean, P = DnC_batch(data, args, True, mel_Fs, stft_Fs, Ls, epochs=1)
         print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
-        wta_ones[i] += wta_snr_mean
+        wta_ones[ni] += wta_snr_mean
 
     norm_true_ones = [true_ones[idx]/tot_seed for idx in range (10)]
     norm_knn_ones = [knn_ones[idx]/tot_seed for idx in range (10)]

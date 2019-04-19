@@ -72,7 +72,8 @@ def main():
     model_nm = get_model_nm(args)
     
     if args.is_debug:
-        debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm)
+        # debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm) # kNN
+        debug_wta_snr(args, mel_Fs, stft_Fs, Ls) # WTA
 
     else:
         print ("Running {}...".format(model_nm))

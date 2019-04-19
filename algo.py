@@ -326,7 +326,48 @@ def debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm):
     plt.bar(np.arange(10), height=norm_mel_snrs, alpha=0.7)
     model_nm = "DEBUG_" + model_nm
     plt.savefig(model_nm)
-    
+  
+
+def debug_wta_snr(args, mel_Fs, stft_Fs, Ls): 
+    true_ones = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    knn_ones = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    wta_ones = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+
+    tot_seed = 30
+    for seed in range(tot_seed*10):
+        ni = seed%10
+        args.noise_idx = [ni]
+        data = setup_experiment_data(args)
+        recon = librosa.istft(data['teX'] * data['te_IRM'], hop_length=512)
+        snr_true = SDR(recon, data['tes'])[1]
+
+        print ("True SNR: {:.2f}".format(snr_true))
+        true_ones[i] += snr_true
+
+        snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
+        print("Mean SNR: {:.2f}".format(snr_mean))
+        knn_ones[i] += snr_mean
+
+        wta_snr_mean, P = DnC_batch(data, args, True, mel_Fs, stft_Fs, Ls, epochs=1)
+        print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
+        wta_ones[i] += wta_snr_mean
+
+    norm_true_ones = [true_ones[idx]/tot_seed for idx in range (10)]
+    norm_knn_ones = [knn_ones[idx]/tot_seed for idx in range (10)]
+    norm_wta_ones = [wta_ones[idx]/tot_seed for idx in range (10)]
+
+    f, axarr = plt.subplots(1, 3, figsize=(12,4))
+    axarr[0].set_title('Oracle')
+    axarr[0].bar(np.arange(10), height=norm_true_ones)
+    axarr[1].set_title('kNN')
+    axarr[1].bar(np.arange(10), height=norm_knn_ones)
+    axarr[1].set_ylim(-10,20)
+    axarr[2].set_title('WTA')
+    axarr[2].bar(np.arange(10), height=norm_wta_ones)
+    axarr[2].set_ylim(-10,20)
+    plt.savefig("DEBUG_all_perfs")
+    print ("Mean Oracle SNR: {:.2f}".format(np.array(norm_true_ones).mean()))
+
     
 def load_model_and_get_max(model_nm, data, args, mel_Fs, stft_Fs, Ls):
     search_Ps = np.load(model_nm)

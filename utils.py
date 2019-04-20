@@ -121,7 +121,7 @@ def get_model_nm(args):
         args.screen)
     return model_nm
 
-def viz_res(file_dir, title):
+def viz_res(file_dir, title, print_args):
     true_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
     knn_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
     wta_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
@@ -133,9 +133,12 @@ def viz_res(file_dir, title):
     for model in files:
         f_args = model_argparse(model)
         nidx = f_args.noise_idx
-        file_check = f_args.errmetric == errm and f_args.use_mel == umel and f_args.n_dr == n_dr
-        file_check = file_check and f_args.n_spkr == n_spkr and f_args.n_rs == n_rs and f_args.num_L == num_L
-
+        file_check = True
+        for attr, value in f_args.__dict__.items():
+            if attr in print_args.__dict__:
+                if value != print_args.__dict__[attr]:
+                    file_check = False
+        
         if file_check:
             n = f_args.noise_idx[0]
             with open(file_dir + model, "rb") as input_file:
@@ -148,10 +151,11 @@ def viz_res(file_dir, title):
             cnts[n] += 1
             model_names[n].append(model)
 
-    avg_true_perfs = [true_perfs[idx]/cnts[idx] for idx in range (10)]
-    avg_knn_perfs = [knn_perfs[idx]/cnts[idx] for idx in range (10)]
-    avg_wta_perfs = [wta_perfs[idx]/cnts[idx] for idx in range (10)]
-    avg_search_perfs = [search_perfs[idx]/cnts[idx] for idx in range (10)]
+    eps = 1e-10
+    avg_true_perfs = [true_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
+    avg_knn_perfs = [knn_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
+    avg_wta_perfs = [wta_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
+    avg_search_perfs = [search_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
 
     f, axarr = plt.subplots(1, 3, figsize=(12,4))
     axarr[0].set_title('Counts')

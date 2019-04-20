@@ -237,7 +237,7 @@ def search_best_P(X, L, args):
 
         # Set limiting criterion
         errs[i], times[i] = err, time.time() - toc
-        if times[i] > args.time_th and not fix_err and i > 10:
+        if times[i] > args.time_th and not fix_err and i > 20:
             fix_err = True
             print (model_nm, end='| ')
             print ("Fixed at epoch {} for taking {:.2f}s".format(start_idx, times[i]))

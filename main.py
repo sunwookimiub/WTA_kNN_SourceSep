@@ -47,7 +47,7 @@ def parse_arguments():
     parser.add_argument("-d", "--DnC", type=int, default=1,
                         help="Divide and Conquer: Number of partitions (Default: 1)")
 
-    parser.add_argument("-p", "--print_every", type=int, default=10,
+    parser.add_argument("-p", "--print_every", type=int, default=1,
                         help="Search: Number of iterations to print results (Default: 10)")
     parser.add_argument("-t", "--time_th", type=float, default=1.0,
                         help="Search: Number of seconds to limit search (Default: 1.0)")

@@ -192,30 +192,30 @@ def get_error(sim_x, sim_h, errmetric):
         err = np.sum(sim_h * np.log(sim_x+1e-20))
     return err
 
-def search_best_P(X, L, args):
+def search_best_P(search_X, search_L, args):
     model_nm = get_model_nm(args)
-    F, _ = X.shape
+    F, _ = search_X.shape
     
     # Inits
-    tot_n = L * 2 # for testing purposes run extra
+    tot_n = search_L * 2 # for testing purposes run extra
     num_iters = tot_n//args.num_L
-    start_th = L//args.num_L # To ensure only num_L are being tested
+    start_th = search_L//args.num_L # To ensure only num_L are being tested
     
     good_Ps = np.zeros((tot_n, args.M), dtype=np.int)
     errs, times = np.zeros(num_iters), np.zeros(num_iters)
 
     # Retrieve similarity metric for train set
-    sim_x = get_sim_matrix(X, 'cosine', args.errmetric)
+    sim_x = get_sim_matrix(search_X, 'cosine', args.errmetric)
 
     # Get first error approximation
     random_P = create_permutation(F, args.num_L, args.M)
-    sim_h = get_sim_matrix(X, 'hamming', args.errmetric, random_P)
+    sim_h = get_sim_matrix(search_X, 'hamming', args.errmetric, random_P)
     err = get_error(sim_x, sim_h, args.errmetric)
 
     # Begin iterative search of best permutations
     fix_err = False
-    for i in range(num_iters):
-        start_idx = i*args.num_L
+    for ep in range(num_iters):
+        start_idx = ep*args.num_L
         toc = time.time()
 
         # If it takes too long, don't try to get better
@@ -226,25 +226,25 @@ def search_best_P(X, L, args):
         # Search for a better permutation than before
         while np.abs(err) > np.abs(prev_err):
             p_start_idx = 0
-            if i >= start_th: 
-                p_start_idx += (i-start_th+1)*args.num_L
-            end_idx = (i+1)*args.num_L
+            if ep >= start_th: 
+                p_start_idx += (ep-start_th+1)*args.num_L
+            end_idx = (ep+1)*args.num_L
             
             good_Ps[start_idx:end_idx] = create_permutation(F, args.num_L, args.M)
             use_P = good_Ps[p_start_idx:end_idx]
-            sim_h = get_sim_matrix(X, 'hamming', args.errmetric, use_P)
+            sim_h = get_sim_matrix(search_X, 'hamming', args.errmetric, use_P)
             err = get_error(sim_x, sim_h, args.errmetric)
 
         # Set limiting criterion
-        errs[i], times[i] = err, time.time() - toc
-        if times[i] > args.time_th and not fix_err and i > 20:
+        errs[ep], times[ep] = err, time.time() - toc
+        if times[ep] > args.time_th and not fix_err and ep > 20:
             fix_err = True
             print (model_nm, end='| ')
-            print ("Fixed at epoch {} for taking {:.2f}s".format(start_idx, times[i]))
+            print ("Fixed at epoch {} for taking {:.2f}s".format(start_idx, times[ep]))
                 
         if start_idx % args.print_every == 0:
             print (model_nm, end='| ')
-            print("Epoch {} t: {:.2f} err: {:.2f}".format(start_idx, times[i], errs[i]))
+            print("Epoch {} t: {:.2f} err: {:.2f}".format(start_idx, times[ep], errs[ep]))
                     
     return good_Ps, errs
 
@@ -257,6 +257,7 @@ def random_sampling_search(data, args, mel_Fs, stft_Fs, Ls, subsample_Ls):
     for i in range(args.n_rs):
         newdata = copy.deepcopy(data)
         newdata['trX_mag'] = newdata['trX_mag'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
+        newdata['trX_mag_mel'] = newdata['trX_mag_mel'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
         newdata['IBM'] = newdata['IBM'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
         search_Ps_i, search_errs = DnC_search_good_Ps(newdata, args, mel_Fs, stft_Fs, subsample_Ls)
         if rs_Ps is not None:
@@ -267,30 +268,30 @@ def random_sampling_search(data, args, mel_Fs, stft_Fs, Ls, subsample_Ls):
 
     return rs_Ps
 
-def DnC_search_good_Ps(data, args, mel_Fs, stft_Fs, Ls):
-    Ps = np.zeros((args.DnC, Ls[0]*2, args.M), dtype=np.int)
+def DnC_search_good_Ps(data, args, mel_Fs, stft_Fs, subsample_Ls):
+    Ps = np.zeros((args.DnC, subsample_Ls[0]*2, args.M), dtype=np.int)
     allerrs = []
     stft_start_idx = 0
     mel_start_idx = 0
-    for i in range(args.DnC):
-        stft_end_idx = stft_start_idx + stft_Fs[i]
-        mel_end_idx = mel_start_idx + mel_Fs[i]
+    for j in range(args.DnC):
+        stft_end_idx = stft_start_idx + stft_Fs[j]
+        mel_end_idx = mel_start_idx + mel_Fs[j]
 
-        IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
+        IBM_j = data['IBM'][stft_start_idx:stft_end_idx]
         if args.use_mel:
-            teX_i = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
-            trX_i = data['trX_mag_mel'][mel_start_idx:mel_end_idx]
+            teX_j = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
+            trX_j = data['trX_mag_mel'][mel_start_idx:mel_end_idx]
         else:
-            teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
-            trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
+            teX_j = data['teX_mag'][stft_start_idx:stft_end_idx]
+            trX_j = data['trX_mag'][stft_start_idx:stft_end_idx]
             
         good_P, errs = search_best_P(
-                trX_i, Ls[i], args)
-        Ps[i] = good_P
+                trX_j, subsample_Ls[j], args)
+        Ps[j] = good_P
         allerrs.append(errs)
         
-        stft_start_idx += stft_Fs[i]
-        mel_start_idx += mel_Fs[i]
+        stft_start_idx += stft_Fs[j]
+        mel_start_idx += mel_Fs[j]
         
     return Ps, allerrs
 

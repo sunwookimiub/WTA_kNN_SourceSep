@@ -244,7 +244,8 @@ def search_best_P(search_X, search_L, args):
                 
         if start_idx % args.print_every == 0:
             print (model_nm, end='| ')
-            print("Epoch {} t: {:.2f} err: {:.2f}".format(start_idx, times[ep], errs[ep]))
+            print("Epoch {} t: {:.2f} err: {:.2f}. Shape of search_X {} search_L {}".format(
+                start_idx, times[ep], errs[ep], search_X.shape, search_L))
                     
     return good_Ps, errs
 

@@ -244,12 +244,13 @@ def search_best_P(search_X, search_L, args):
                 
         if start_idx % args.print_every == 0:
             print (model_nm, end='| ')
-            print("Epoch {} t: {:.2f} err: {:.2f}. Shape of search_X {} search_L {}".format(
-                start_idx, times[ep], errs[ep], search_X.shape, search_L))
+            print("Epoch {} t: {:.2f} err: {:.2f}".format(
+                start_idx, times[ep], errs[ep]))
                     
     return good_Ps, errs
 
-def random_sampling_search(data, args, mel_Fs, stft_Fs, Ls, subsample_Ls):
+def random_sampling_search(data, args, mel_Fs, stft_Fs, Ls):
+    subsample_Ls = Ls//args.n_rs
     rs_Ps = None
     _, T = data['trX_mag'].shape
     n_sample_frames = T//args.n_rs
@@ -375,3 +376,38 @@ def load_model_and_get_max(model_nm, data, args, mel_Fs, stft_Fs, Ls):
     search_Ps = np.load(model_nm)
     search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
     return search_snr_mean.max()
+
+def debug_SDR_reconstruction(model):
+    f_args = model_argparse(model)
+    f_args.print_every = 1
+    with open(model, "rb") as input_file:
+        e = pickle.load(input_file)
+
+    np.random.seed(f_args.seed)
+    data = setup_experiment_data(f_args)
+
+    mel_Fs = get_DnC_FL_divs(f_args.DnC, 128)
+    stft_Fs = get_DnC_FL_divs(f_args.DnC, 513)
+    Ls = get_DnC_FL_divs(f_args.DnC, f_args.L)
+
+    skip_n = Ls[0]
+    errs = np.zeros((skip_n, f_args.DnC))
+    snr_mean_all = np.zeros(skip_n)
+    model_nm = get_model_nm(f_args)
+    teX_rs, trX_rs, IBM_rs, sim_x_rs= [], [], [], []
+    stft_start_idx = 0
+    mel_start_idx = 0
+
+    IBM_i = data['IBM']
+    teX_i = data['teX_mag_mel']
+    trX_i = data['trX_mag_mel']
+    sim_x = get_sim_matrix(trX_i, 'cosine', f_args.errmetric)
+
+    Ps = e['search_Ps'][0]
+
+    for j in range(100):
+        P = Ps[j:j+skip_n]
+        IBM_Mean = get_IBM_from_pairwise_dist(teX_i, trX_i, IBM_i, f_args.K, 'hamming', P)
+        tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean, hop_length=512)
+        snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
+        print (snr_mean_sk)

@@ -47,7 +47,7 @@ def parse_arguments():
     parser.add_argument("-d", "--DnC", type=int, default=1,
                         help="Divide and Conquer: Number of partitions (Default: 1)")
 
-    parser.add_argument("-p", "--print_every", type=int, default=1,
+    parser.add_argument("-p", "--print_every", type=int, default=10,
                         help="Search: Number of iterations to print results (Default: 10)")
     parser.add_argument("-t", "--time_th", type=float, default=1.0,
                         help="Search: Number of seconds to limit search (Default: 1.0)")
@@ -69,13 +69,13 @@ def main():
     mel_Fs = get_DnC_FL_divs(args.DnC, 128)
     stft_Fs = get_DnC_FL_divs(args.DnC, 513)
     Ls = get_DnC_FL_divs(args.DnC, args.L)
-    subsample_Ls = Ls//args.n_rs
 
     model_nm = get_model_nm(args)
     
     if args.is_debug:
         # debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm) # kNN
         # debug_wta_snr(args, mel_Fs, stft_Fs, Ls) # WTA
+        debug_SDR_reconstruction('DSTRMNUS(8|2|10|5|True|[8]|True|1)_ENT(xent|1|180)_LM(100|2)_DK(1|5)_S(c4).pkl')
         print ("Nothing here")
 
     else:
@@ -93,7 +93,7 @@ def main():
         print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
 
         # Generate good perms
-        search_Ps = random_sampling_search(data, args, mel_Fs, stft_Fs, Ls, subsample_Ls)
+        search_Ps = random_sampling_search(data, args, mel_Fs, stft_Fs, Ls)
         search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
         plot_results(snr_true, snr_mean, wta_snr_mean, search_snr_mean, model_nm)
 

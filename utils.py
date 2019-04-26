@@ -156,6 +156,11 @@ def viz_res(file_dir, title, print_args):
     avg_knn_perfs = [knn_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
     avg_wta_perfs = [wta_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
     avg_search_perfs = [search_perfs[idx]/(cnts[idx]+eps) for idx in range (10)]
+    
+    print (np.mean(np.array(avg_true_perfs)), 
+           np.mean(np.array(avg_knn_perfs)), 
+           np.mean(np.array(avg_wta_perfs)), 
+           np.mean(np.array(avg_search_perfs)))
 
     f, axarr = plt.subplots(1, 3, figsize=(12,4))
     axarr[0].set_title('Counts')

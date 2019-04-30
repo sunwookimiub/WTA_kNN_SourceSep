@@ -440,7 +440,7 @@ def debug_get_argmax(models):
             if j % 49 == 0:
                 print (j, snr_mean_sk)
             snr_mean_all[j] = snr_mean_sk
-        
+        print ([snr_mean_all.argmax(), snr_mean_all.max(), e['search_snr_mean_max']])
         ret_dict[model] = [snr_mean_all.argmax(), snr_mean_all.max(), e['search_snr_mean_max']]
 
     some_name = "Saving_Argmaxs"

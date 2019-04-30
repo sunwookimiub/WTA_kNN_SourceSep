@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import librosa
 import time
@@ -413,11 +414,13 @@ def debug_SDR_reconstruction(model):
         print (snr_mean_sk)
         
         
-def debug_get_argmax(models):
+def debug_get_argmax(file_dir):
+    models = [x for x in os.listdir(file_dir) if '.pkl' in x]
     ret_dict = {}
-    for model in models:
+    for i,model in enumerate(models):
+        print (i, len(models), file_dir+'/'+model)
         f_args = model_argparse(model)
-        with open(model, "rb") as input_file:
+        with open(file_dir+'/'+model, "rb") as input_file:
             e = pickle.load(input_file)
 
         np.random.seed(f_args.seed)

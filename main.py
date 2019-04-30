@@ -76,7 +76,9 @@ def main():
         # debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm) # kNN
         # debug_wta_snr(args, mel_Fs, stft_Fs, Ls) # WTA
         # debug_SDR_reconstruction('DSTRMNUS(8|2|10|5|True|[8]|True|1)_ENT(xent|1|180)_LM(100|2)_DK(1|5)_S(c4).pkl')
-        print ("Nothing here")
+        models = [x for x in os.listdir(".") if '.pkl' in x]
+        debug_get_argmax(models[:2])
+        # print ("Nothing here")
 
     else:
         print ("Running {}...".format(model_nm))

@@ -411,3 +411,38 @@ def debug_SDR_reconstruction(model):
         tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean, hop_length=512)
         snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
         print (snr_mean_sk)
+        
+        
+def debug_get_argmax(models):
+    ret_dict = {}
+    for model in models:
+        f_args = model_argparse(model)
+        with open(model, "rb") as input_file:
+            e = pickle.load(input_file)
+
+        np.random.seed(f_args.seed)
+        data = setup_experiment_data(f_args)
+        Ls = get_DnC_FL_divs(f_args.DnC, f_args.L)
+
+        skip_n = Ls[0]
+        snr_mean_all = np.zeros(skip_n)
+
+        IBM_i = data['IBM']
+        teX_i = data['teX_mag_mel']
+        trX_i = data['trX_mag_mel']
+        Ps = e['search_Ps'][0]
+
+        for j in range(100):
+            P = Ps[j:j+skip_n]
+            IBM_Mean = get_IBM_from_pairwise_dist(teX_i, trX_i, IBM_i, f_args.K, 'hamming', P)
+            tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean, hop_length=512)
+            snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
+            if j % 49 == 0:
+                print (j, snr_mean_sk)
+            snr_mean_all[j] = snr_mean_sk
+        
+        ret_dict[model] = [snr_mean_all.argmax(), snr_mean_all.max(), e['search_snr_mean_max']]
+
+    some_name = "Saving_Argmaxs"
+    pickle.dump(ret_dict, open("{}.pkl".format(some_name),"wb"))
+    return ret_dict

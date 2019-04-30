@@ -5,7 +5,7 @@ import time
 import copy
 from utils import *
 import _pickle as pickle
-from loader import setup_experiment_data
+from loader import setup_experiment_data, setup_debug_data
 from sklearn.metrics import pairwise_distances as pdist
 
 # Reconstruction helper functions
@@ -424,7 +424,7 @@ def debug_get_argmax(file_dir):
             e = pickle.load(input_file)
 
         np.random.seed(f_args.seed)
-        data = setup_experiment_data(f_args)
+        data = setup_debug_data(f_args)
         Ls = get_DnC_FL_divs(f_args.DnC, f_args.L)
 
         skip_n = Ls[0]

@@ -127,9 +127,9 @@ def setup_experiment_data(args):
     trs_spkr_lists = []
     for i in range(1,args.n_dr+1):
         trs_spkr_lists += get_random_dr_speakers(i, args.n_spkr, args.seed)
-    print ("Train Speakers: {}".format(trs_spkr_lists))
     random.seed(args.seed)
     random.shuffle(trs_spkr_lists)
+    print ("Train Speakers: {}".format(trs_spkr_lists))
     trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs, args.seed)
     
     # Load testset
@@ -138,9 +138,58 @@ def setup_experiment_data(args):
         spkr = get_random_tes(trs_spkr_lists, args.seed)
         tes_spkr_lists.append(spkr)
         trs_spkr_lists.append(spkr)
-    print ("Test Speakers: {}".format(tes_spkr_lists))
     random.seed(args.seed)
     random.shuffle(tes_spkr_lists)
+    print ("Test Speakers: {}".format(tes_spkr_lists))
+    tes, ten, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
+
+    # Normalize
+    max_amp = trx.max()
+    trs, trn, trx, tes, ten, tex = normalize_frqs(max_amp, [trs, trn, trx, tes, ten, tex])
+
+    # STFT
+    trS, trN, trX, teS, teN, teX = stft_transform([trs, trn, trx, tes, ten, tex])
+    trS_mag, trN_mag, trX_mag, teS_mag, teN_mag, teX_mag = get_magnitudes([trS, trN, trX, teS, teN, teX])
+    IBM = (trS_mag > trN_mag)*1
+    te_IRM = get_IRM(teS_mag, teN_mag)
+    
+    # Mel spectrogram
+    trX_mag_mel, teX_mag_mel = get_mels([trX_mag, teX_mag])
+
+    data = {'tes': tes, 'teX': teX, 'te_IRM': te_IRM, 
+            'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
+            'trX_mag_mel': trX_mag_mel, 'teX_mag_mel': teX_mag_mel}
+    
+    return data
+
+def setup_debug_data(args):
+    noise_frqs = load_noises('Data/Duan')
+        
+    if args.seed == 0:
+        trs_spkr_lists = ['dr6/flag0', 'dr8/fbcg1', 'dr3/mtlb0', 'dr1/mrcg0', 'dr5/mhmg0', 'dr2/fpjf0', 
+                          'dr2/mrab0', 'dr6/msds0', 'dr7/mrpc1', 'dr4/mbma0', 'dr5/ftbw0', 'dr3/fntb0', 
+                          'dr1/ftbr0', 'dr4/fdkn0', 'dr8/mbsb0', 'dr7/fmkc0']
+        tes_spkr_lists = ['dr5/flja0', 'dr2/mmaa0', 'dr4/mlsh0', 'dr5/mwch0', 'dr6/majp0', 'dr4/msrg0', 
+                          'dr3/mtpp0', 'dr6/fsbk0', 'dr6/fjdm2', 'dr4/mmbs0']
+    elif args.seed == 1:
+        trs_spkr_lists = ['dr2/faem0', 'dr6/fklc1', 'dr1/fvfb0', 'dr8/fpls0', 'dr4/fssb0', 'dr3/mrjb1', 
+                          'dr2/mjma0', 'dr5/fsag0', 'dr4/mpeb0', 'dr6/mesj0', 'dr8/mmea0', 'dr1/mdac0', 
+                          'dr7/fpab1', 'dr7/mdcm0', 'dr5/mrvg0', 'dr3/fdfb0']
+        tes_spkr_lists = ['dr4/fcag0', 'dr4/fjwb1', 'dr4/mcss0', 'dr2/fajw0', 'dr2/fdxw0', 'dr2/fskl0', 
+                          'dr4/mmbs0', 'dr4/flkm0', 'dr2/marc0', 'dr4/mfwk0']
+    elif args.seed == 2:
+        trs_spkr_lists = ['dr7/fjen0', 'dr6/mkes0', 'dr4/mjrh0', 'dr7/mbar0', 'dr4/flhd0', 'dr1/fdaw0', 
+                          'dr5/fsag0', 'dr2/mrjh0', 'dr5/mewm0', 'dr3/fcmg0', 'dr6/fapb0', 'dr2/faem0', 
+                          'dr3/mgaf0', 'dr8/fmbg0', 'dr8/mtcs0', 'dr1/mrws0']
+        tes_spkr_lists = ['dr5/mtmt0', 'dr1/ftbr0', 'dr7/mrpc1', 'dr1/mjwt0', 'dr7/fpab1', 'dr1/mtjs0', 
+                          'dr5/mjrg0', 'dr5/mjxa0', 'dr6/msds0', 'dr8/mejs0']
+    
+    # Load trainset    
+    print ("Train Speakers: {}".format(trs_spkr_lists))
+    trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs, args.seed)
+    
+    # Load testset
+    print ("Test Speakers: {}".format(tes_spkr_lists))
     tes, ten, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
 
     # Normalize

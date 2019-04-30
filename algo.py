@@ -437,7 +437,7 @@ def debug_get_argmax(models):
             IBM_Mean = get_IBM_from_pairwise_dist(teX_i, trX_i, IBM_i, f_args.K, 'hamming', P)
             tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean, hop_length=512)
             snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
-            if j % 49 == 0:
+            if j % 5 == 0:
                 print (j, snr_mean_sk)
             snr_mean_all[j] = snr_mean_sk
         print ([snr_mean_all.argmax(), snr_mean_all.max(), e['search_snr_mean_max']])

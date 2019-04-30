@@ -37,11 +37,11 @@ def get_DnC_FL_divs(DnC, F_or_L):
     F_or_Ls[0] += F_or_L%DnC
     return F_or_Ls
 
-def DnC_batch(data, args, is_WTA, mel_Fs, stft_Fs, Ls=None, epochs=1): 
+def DnC_batch(data, args, is_WTA, mel_Fs, stft_Fs, Ls=None, epochs=1):
     pdist_metric = 'cosine'
     P=None
     Ps = np.zeros((args.L, args.M), dtype=np.int)
-    
+
     sdr_mean = np.zeros(epochs)
     for j in range(epochs):
         IBMEstMean = np.zeros(data['teX'].shape)
@@ -49,11 +49,11 @@ def DnC_batch(data, args, is_WTA, mel_Fs, stft_Fs, Ls=None, epochs=1):
         mel_start_idx = 0
         if is_WTA:
             P_start_idx = 0
-        
+
         for i in range(args.DnC):
             stft_end_idx = stft_start_idx + stft_Fs[i]
             mel_end_idx = mel_start_idx + mel_Fs[i]
-            
+
             IBM_i = data['IBM'][stft_start_idx:stft_end_idx]
             if args.use_mel:
                 teX_i = data['teX_mag_mel'][mel_start_idx:mel_end_idx]
@@ -61,7 +61,7 @@ def DnC_batch(data, args, is_WTA, mel_Fs, stft_Fs, Ls=None, epochs=1):
             else:
                 teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
                 trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
-            
+
             if is_WTA:
                 if args.use_mel:
                     P = create_permutation(mel_Fs[i], Ls[i], args.M)
@@ -77,10 +77,10 @@ def DnC_batch(data, args, is_WTA, mel_Fs, stft_Fs, Ls=None, epochs=1):
 
             stft_start_idx += stft_Fs[i]
             mel_start_idx += mel_Fs[i]
-            
+
         tesReconMean = librosa.istft(data['teX'] * IBMEstMean, hop_length=512)
         sdr_mean[j] = SDR(tesReconMean, data['tes'])[1]
-        
+
     if is_WTA:
         return sdr_mean.mean(), Ps
     return sdr_mean.mean()
@@ -102,15 +102,15 @@ def DnC_search_good_Ps(data, args, mel_Fs, stft_Fs, Ls):
         else:
             teX_i = data['teX_mag'][stft_start_idx:stft_end_idx]
             trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
-            
+
         good_P, errs = search_best_P(
                 trX_i, Ls[i], args)
         Ps[i] = good_P
         allerrs.append(errs)
-        
+
         stft_start_idx += stft_Fs[i]
         mel_start_idx += mel_Fs[i]
-        
+
     return Ps, allerrs
 
 def DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, Ps):
@@ -134,15 +134,15 @@ def DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, Ps):
             trX_i = data['trX_mag'][stft_start_idx:stft_end_idx]
 
         sim_x = get_sim_matrix(trX_i, 'cosine', args.errmetric)
-        
+
         teX_rs.append(teX_i)
         trX_rs.append(trX_i)
         IBM_rs.append(IBM_i)
         sim_x_rs.append(sim_x)
-        
+
         stft_start_idx += stft_Fs[i]
         mel_start_idx += mel_Fs[i]
-    
+
     for j in range(skip_n):
         IBM_Mean_i = []
         for i in range(args.DnC):
@@ -153,7 +153,7 @@ def DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, Ps):
             IBM_Mean = get_IBM_from_pairwise_dist(teX_i, trX_i, IBM_i, args.K, 'hamming', P)
             IBM_Mean_i.append(IBM_Mean)
 
-        IBM_Mean_sk = np.concatenate(IBM_Mean_i)        
+        IBM_Mean_sk = np.concatenate(IBM_Mean_i)
         tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean_sk, hop_length=512)
         snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
         snr_mean_all[j] = snr_mean_sk
@@ -196,12 +196,12 @@ def get_error(sim_x, sim_h, errmetric):
 def search_best_P(search_X, search_L, args):
     model_nm = get_model_nm(args)
     F, _ = search_X.shape
-    
+
     # Inits
     tot_n = search_L * 2 # for testing purposes run extra
     num_iters = tot_n//args.num_L
     start_th = search_L//args.num_L # To ensure only num_L are being tested
-    
+
     good_Ps = np.zeros((tot_n, args.M), dtype=np.int)
     errs, times = np.zeros(num_iters), np.zeros(num_iters)
 
@@ -220,17 +220,17 @@ def search_best_P(search_X, search_L, args):
         toc = time.time()
 
         # If it takes too long, don't try to get better
-        if not fix_err: 
+        if not fix_err:
             prev_err = err
         err = np.inf
 
         # Search for a better permutation than before
         while np.abs(err) > np.abs(prev_err):
             p_start_idx = 0
-            if ep >= start_th: 
+            if ep >= start_th:
                 p_start_idx += (ep-start_th+1)*args.num_L
             end_idx = (ep+1)*args.num_L
-            
+
             good_Ps[start_idx:end_idx] = create_permutation(F, args.num_L, args.M)
             use_P = good_Ps[p_start_idx:end_idx]
             sim_h = get_sim_matrix(search_X, 'hamming', args.errmetric, use_P)
@@ -242,12 +242,12 @@ def search_best_P(search_X, search_L, args):
             fix_err = True
             print (model_nm, end='| ')
             print ("Fixed at epoch {} for taking {:.2f}s".format(start_idx, times[ep]))
-                
+
         if start_idx % args.print_every == 0:
             print (model_nm, end='| ')
             print("Epoch {} t: {:.2f} err: {:.2f}".format(
                 start_idx, times[ep], errs[ep]))
-                    
+
     return good_Ps, errs
 
 def random_sampling_search(data, args, mel_Fs, stft_Fs, Ls):
@@ -287,15 +287,15 @@ def DnC_search_good_Ps(data, args, mel_Fs, stft_Fs, subsample_Ls):
         else:
             teX_j = data['teX_mag'][stft_start_idx:stft_end_idx]
             trX_j = data['trX_mag'][stft_start_idx:stft_end_idx]
-            
+
         good_P, errs = search_best_P(
                 trX_j, subsample_Ls[j], args)
         Ps[j] = good_P
         allerrs.append(errs)
-        
+
         stft_start_idx += stft_Fs[j]
         mel_start_idx += mel_Fs[j]
-        
+
     return Ps, allerrs
 
 
@@ -308,31 +308,31 @@ def debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm):
         np.random.seed(args.seed)
         args.noise_idx = [seed % 10]
         data = setup_experiment_data(args)
-        
+
         args.use_mel = False
         snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         stft_snrs[str(args.noise_idx[0])] += snr_mean
-        
+
         args.use_mel = True
         snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         mel_snrs[str(args.noise_idx[0])] += snr_mean
-        
+
         if seed % 10 == 0 and seed > 1:
             norm_stft_snrs = [stft_snrs[str(idx)]/(seed/10) for idx in range (10)]
             norm_mel_snrs = [mel_snrs[str(idx)]/(seed/10) for idx in range (10)]
             print (seed)
             print (norm_stft_snrs)
             print (norm_mel_snrs)
-        
+
     norm_stft_snrs = [stft_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
     norm_mel_snrs = [mel_snrs[str(idx)]/(tot_seeds/10) for idx in range (10)]
     plt.bar(np.arange(10), height=norm_stft_snrs, alpha=0.9)
     plt.bar(np.arange(10), height=norm_mel_snrs, alpha=0.7)
     model_nm = "DEBUG_" + model_nm
     plt.savefig(model_nm)
-  
 
-def debug_wta_snr(args, mel_Fs, stft_Fs, Ls): 
+
+def debug_wta_snr(args, mel_Fs, stft_Fs, Ls):
     true_ones = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
     knn_ones = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
     wta_ones = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
@@ -372,7 +372,7 @@ def debug_wta_snr(args, mel_Fs, stft_Fs, Ls):
     plt.savefig("DEBUG_all_perfs")
     print ("Mean Oracle SNR: {:.2f}".format(np.array(norm_true_ones).mean()))
 
-    
+
 def load_model_and_get_max(model_nm, data, args, mel_Fs, stft_Fs, Ls):
     search_Ps = np.load(model_nm)
     search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
@@ -412,8 +412,8 @@ def debug_SDR_reconstruction(model):
         tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean, hop_length=512)
         snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
         print (snr_mean_sk)
-        
-        
+
+
 def debug_get_argmax(file_dir):
     models = [x for x in os.listdir(file_dir) if '.pkl' in x]
     ret_dict = {}
@@ -440,7 +440,7 @@ def debug_get_argmax(file_dir):
             IBM_Mean = get_IBM_from_pairwise_dist(teX_i, trX_i, IBM_i, f_args.K, 'hamming', P)
             tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean, hop_length=512)
             snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
-            if j % 5 == 0:
+            if j % 33 == 0:
                 print (j, snr_mean_sk)
             snr_mean_all[j] = snr_mean_sk
         print ([snr_mean_all.argmax(), snr_mean_all.max(), e['search_snr_mean_max']])

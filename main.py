@@ -49,7 +49,7 @@ def parse_arguments():
 
     parser.add_argument("-p", "--print_every", type=int, default=10,
                         help="Search: Number of iterations to print results (Default: 10)")
-    parser.add_argument("-t", "--time_th", type=float, default=1.0,
+    parser.add_argument("-t", "--time_th", type=float, default=180.0,
                         help="Search: Number of seconds to limit search (Default: 1.0)")
     parser.add_argument("-s", "--is_save", action='store_true',
                         help = "Search: Option to save searched permutations")
@@ -76,11 +76,14 @@ def main():
         # debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm) # kNN
         # debug_wta_snr(args, mel_Fs, stft_Fs, Ls) # WTA
         # debug_SDR_reconstruction('DSTRMNUS(8|2|10|5|True|[8]|True|1)_ENT(xent|1|180)_LM(100|2)_DK(1|5)_S(c4).pkl')
-        file_dir = "Results_get_argmax1"
-        debug_get_argmax(file_dir)
+        #file_dir = "Results_get_argmax1"
+        #debug_get_argmax(file_dir)
         # dataname = "datadebug_seed{}_n{}".format(args.seed, args.noise_idx[0])
         # pickle.dump(data, open("{}.pkl".format(dataname),"wb"))
         # print ("Nothing here")
+        fileroot = '../../../serveraccess/toviz/'
+        curr_dir = "{}/k{}/m{}".format(fileroot, args.K, args.M)
+        add_correct_sdr(curr_dir, args)
 
     else:
         print ("Running {}...".format(model_nm))

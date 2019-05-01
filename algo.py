@@ -527,3 +527,56 @@ def DnC_analyze_good_Ps_firstL(data, args, P):
     snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
     print (args.M, args.K, args.noise_idx[0], args.seed, snr_mean_sk)
     return snr_mean_sk
+
+def get_first_L(X):
+    firstLX = np.empty_like(X)
+    for i in range(20):
+         firstLX[i*10:(i+1)*10] = (X[i::20])
+    return firstLX
+
+def add_correct_sdr(file_dir, print_args):
+    test_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    search_perfs = {k:v for k, v in zip(np.arange(10), np.zeros(10))}
+    cnts = {k:v for k, v in zip(np.arange(10), np.zeros(10, dtype=np.int))}
+
+    files = [x for x in os.listdir(file_dir) if '.pkl' in x and 'Saving' not in x and 'datadebug' not in x]
+    for model in files:
+        f_args = model_argparse(model)
+        print_args.noise_idx = f_args.noise_idx
+        print_args.seed = f_args.seed
+        print_args.screen = f_args.screen
+        file_check = True
+        for attr, value in f_args.__dict__.items():
+            if attr in print_args.__dict__:
+                if value != print_args.__dict__[attr]:
+                    print (value, attr)
+                    file_check = False
+
+        if file_check:
+            with open(file_dir + '/'+model, "rb") as input_file:
+                e = pickle.load(input_file)
+                
+            if e['search_Ps'].shape[1] == 200:
+                print ("Fixing {}".format(model))
+                e['prev_dwta_snr'] = e['search_snr_mean_max']
+                data = setup_debug_data(f_args)
+                P = e['search_Ps'][0]
+                
+                newP = get_first_L(P)[:100]
+                IBMEstMean = get_IBM_from_pairwise_dist(
+                                                    data['teX_mag_mel'], data['trX_mag_mel'], data['IBM'], 
+                                                    f_args.K, 'hamming', newP)
+                tesReconMean = librosa.istft(data['teX'] * IBMEstMean, hop_length=512)
+                sdr_mean = SDR(tesReconMean, data['tes'])[1]
+                e['search_snr_mean_max'] = sdr_mean
+                print ("{:.2f} | {:.2f}".format(e['prev_dwta_snr'], sdr_mean))
+                pickle.dump(e, open("{}/Fixed_{}".format(file_dir, model),"wb"))
+            else:
+                print ("{} is fine".format(model))
+                
+            
+            
+#     for attr, value in f_args.__dict__.items():
+#         print (attr, value)
+#     for attr, value in print_args.__dict__.items():
+#         print (attr, value)

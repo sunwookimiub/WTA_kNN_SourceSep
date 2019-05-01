@@ -81,6 +81,7 @@ class model_argparse():
         self.parse(model_nm)
     
     def parse(self, model_nm):
+        model_nm = model_nm.replace('Rerun_','')
         real_nm = model_nm.split('.npy')[0]
         split_nm = real_nm.split('_')
         first_split = split_nm[0].split('(')[1].split(')')[0].split('|')

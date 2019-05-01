@@ -508,7 +508,7 @@ def search_best_P_firstL(search_X, search_L, args):
             err = get_error(sim_x, sim_h, args.errmetric)
         errs[ep] = err
         if ep % 5 == 0:
-            print (args.M, args.K, end='| ')
+            print (args.M, args.K, args.noise_idx[0], args.seed, end='| ')
             print("Epoch {} err: {:.2f}".format(ep, errs[ep]))
 
     return good_Ps, errs
@@ -525,5 +525,5 @@ def DnC_analyze_good_Ps_firstL(data, args, P):
     IBM_Mean_sk = get_IBM_from_pairwise_dist(teX, trX, IBM, args.K, 'hamming', P)
     tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean_sk, hop_length=512)
     snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
-    print (args.M, args.K, snr_mean_sk)
+    print (args.M, args.K, args.noise_idx[0], args.seed, snr_mean_sk)
     return snr_mean_sk

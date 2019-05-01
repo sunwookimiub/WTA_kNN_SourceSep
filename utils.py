@@ -112,7 +112,7 @@ class model_argparse():
 
 
 def get_model_nm(args):        
-    model_nm = "DSTRMNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})_S({})".format(
+    model_nm = "Rerun_DSTRMNUS({}|{}|{}|{}|{}|{}|{}|{})_ENT({}|{}|{})_LM({}|{})_DK({}|{})_S({})".format(
         args.n_dr, args.n_spkr, args.n_test_spkrs, args.n_rs, 
         args.use_mel, args.noise_idx, args.use_only_seen_noises, args.seed,
         args.errmetric, args.num_L, int(args.time_th),

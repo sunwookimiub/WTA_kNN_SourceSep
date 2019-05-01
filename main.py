@@ -13,19 +13,19 @@ def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument("screen", type=str,
                         help = "Misc: Screen session being run on")
-    parser.add_argument("n_dr", type=int, 
+    parser.add_argument("n_dr", type=int,
                             help="Data: Number of dialects")
-    parser.add_argument("n_spkr", type=int, 
+    parser.add_argument("n_spkr", type=int,
                         help="Data: Number of speakers per dialect")
-    parser.add_argument("errmetric", type=str, 
+    parser.add_argument("errmetric", type=str,
                         help="Search: Error metric (sse, xent)")
-    parser.add_argument("num_L", type=int, 
+    parser.add_argument("num_L", type=int,
                         help="Search: Number of permutations per search")
 
-    
+
     parser.add_argument("--noise_idx", type=int, nargs='*', default=[3],
                         help="Noises (e.g. '5 6' gives 5th and 6th noise [cicada, birds]. Default: 5)")
-    parser.add_argument("-q", "--n_test_spkrs", type=int, default=10, 
+    parser.add_argument("-q", "--n_test_spkrs", type=int, default=10,
                         help="Data: Number of test utterances (Default: 10)")
     parser.add_argument("-u", "--use_only_seen_noises", action='store_false',
                         help = "Data: Option to select beyond seen noises")
@@ -35,15 +35,15 @@ def parse_arguments():
                         help = "Data: Seed for train and test speaker selection")
     parser.add_argument("-r", "--n_rs", type=int, default=1,
                         help = "Data: Random sampling")
-    
+
     parser.add_argument("-k", "--K", type=int, default=5,
                         help="kNN: Number of nearest neighbors (Default: 5)")
-    
+
     parser.add_argument("-l", "--L", type=int, default=100,
                         help="WTA: Number of permutation vectors (Default: 100)")
     parser.add_argument("-m", "--M", type=int, default=3,
                         help="WTA: Number of samples for permutations (Default: 3)")
-    
+
     parser.add_argument("-d", "--DnC", type=int, default=1,
                         help="Divide and Conquer: Number of partitions (Default: 1)")
 
@@ -53,10 +53,10 @@ def parse_arguments():
                         help="Search: Number of seconds to limit search (Default: 1.0)")
     parser.add_argument("-s", "--is_save", action='store_true',
                         help = "Search: Option to save searched permutations")
-    
+
     parser.add_argument("-b", "--is_debug", action='store_true',
                 help = "Debugging: Denoising performance analysis")
-    
+
     return parser.parse_args()
 
 
@@ -65,31 +65,31 @@ def main():
     np.random.seed(args.seed)
 
     data = setup_experiment_data(args)
-    
+
     mel_Fs = get_DnC_FL_divs(args.DnC, 128)
     stft_Fs = get_DnC_FL_divs(args.DnC, 513)
     Ls = get_DnC_FL_divs(args.DnC, args.L)
 
     model_nm = get_model_nm(args)
-    
+
     if args.is_debug:
         # debug_ind_noise_snr(data, args, mel_Fs, stft_Fs, model_nm) # kNN
         # debug_wta_snr(args, mel_Fs, stft_Fs, Ls) # WTA
         # debug_SDR_reconstruction('DSTRMNUS(8|2|10|5|True|[8]|True|1)_ENT(xent|1|180)_LM(100|2)_DK(1|5)_S(c4).pkl')
-        #file_dir = "Results_get_argmax1"
-        #debug_get_argmax(file_dir)
-        dataname = "datadebug_seed{}_n{}".format(args.seed, args.noise_idx[0])
-        pickle.dump(data, open("{}.pkl".format(dataname),"wb"))
+        file_dir = "Results_get_argmax1"
+        debug_get_argmax(file_dir)
+        # dataname = "datadebug_seed{}_n{}".format(args.seed, args.noise_idx[0])
+        # pickle.dump(data, open("{}.pkl".format(dataname),"wb"))
         # print ("Nothing here")
 
     else:
         print ("Running {}...".format(model_nm))
-        
+
         recon = librosa.istft(data['teX'] * data['te_IRM'], hop_length=512)
         snr_true = SDR(recon, data['tes'])[1]
-        
+
         print ("Oracle SNR: {:.2f}".format(snr_true))
-        
+
         snr_mean = DnC_batch(data, args, False, mel_Fs, stft_Fs)
         print("Mean SNR: {:.2f}".format(snr_mean))
 
@@ -97,13 +97,15 @@ def main():
         print("WTA Mean SNR: {:.2f}".format(wta_snr_mean))
 
         # Generate good perms
-        search_Ps = random_sampling_search(data, args, mel_Fs, stft_Fs, Ls)
-        search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
-        plot_results(snr_true, snr_mean, wta_snr_mean, search_snr_mean, model_nm)
+        #search_Ps = random_sampling_search(data, args, mel_Fs, stft_Fs, Ls)
+        #search_snr_mean, errs = DnC_analyze_good_Ps(data, args, mel_Fs, stft_Fs, Ls, search_Ps)
+        search_Ps, search_errs = random_sampling_search_firstL(data, args)
+        search_snr = DnC_analyze_good_Ps_firstL(data, args, search_Ps)
 
         if args.is_save:
             save_data = {'search_Ps': search_Ps, 'snr_true': snr_true, 'snr_mean': snr_mean,
-                         'wta_snr_mean': wta_snr_mean, 'search_snr_mean_max': search_snr_mean.max()}
+                         'wta_snr_mean': wta_snr_mean, 'search_snr_mean_max': search_snr,
+                         'errs': search_errs}
             pickle.dump(save_data, open("{}.pkl".format(model_nm),"wb"))
             print ("Saved")
 

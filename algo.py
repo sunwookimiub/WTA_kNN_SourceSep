@@ -449,3 +449,81 @@ def debug_get_argmax(file_dir):
     some_name = "Saving_Argmaxs"
     pickle.dump(ret_dict, open("{}.pkl".format(some_name),"wb"))
     return ret_dict
+
+def random_sampling_search_firstL(data, args):
+    subsample_L = args.L//args.n_rs
+    rs_Ps = None
+    rs_errs = None
+    _, T = data['trX_mag'].shape
+    n_sample_frames = T//args.n_rs
+    np.random.seed(args.seed)
+    perms = np.random.permutation(T)
+    for i in range(args.n_rs):
+        newdata = copy.deepcopy(data)
+        newdata['trX_mag'] = newdata['trX_mag'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
+        newdata['trX_mag_mel'] = newdata['trX_mag_mel'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
+        newdata['IBM'] = newdata['IBM'][:,perms][:,n_sample_frames*i:n_sample_frames*(i+1)]
+        search_Ps_i, search_errs = DnC_search_good_Ps_firstL(newdata, args, subsample_L)
+        if rs_Ps is not None:
+            rs_Ps = np.concatenate((rs_Ps, search_Ps_i),0)
+            rs_errs = np.concatenate((rs_errs, search_errs),0)
+        else:
+            rs_Ps = search_Ps_i
+            rs_errs = search_errs
+        print (rs_Ps.shape)
+
+    return rs_Ps, rs_errs
+
+def DnC_search_good_Ps_firstL(data, args, L):
+    IBM = data['IBM']
+    if args.use_mel:
+        teX = data['teX_mag_mel']
+        trX = data['trX_mag_mel']
+    else:
+        teX = data['teX_mag']
+        trX = data['trX_mag']
+    good_P, good_err = search_best_P_firstL(trX, L, args)
+    return good_P, good_err
+
+def search_best_P_firstL(search_X, search_L, args):
+    model_nm = get_model_nm(args)
+    F, _ = search_X.shape
+    good_Ps = np.zeros((search_L, args.M), dtype=np.int)
+    errs = np.zeros(search_L)
+
+    sim_x = get_sim_matrix(search_X, 'cosine', args.errmetric)
+    random_P = create_permutation(F, args.num_L, args.M)
+    sim_h = get_sim_matrix(search_X, 'hamming', args.errmetric, random_P)
+    err = get_error(sim_x, sim_h, args.errmetric)
+    errs[0] = err
+    good_Ps[0] = random_P
+
+    for ep in range(1,search_L):
+        prev_err = err
+        err = np.inf
+        while np.abs(err) > np.abs(prev_err):
+            good_Ps[ep] = create_permutation(F, args.num_L, args.M)
+            use_P = good_Ps[:ep+1]
+            sim_h = get_sim_matrix(search_X, 'hamming', args.errmetric, use_P)
+            err = get_error(sim_x, sim_h, args.errmetric)
+        errs[ep] = err
+        if ep % 5 == 0:
+            print (args.M, args.K, end='| ')
+            print("Epoch {} err: {:.2f}".format(ep, errs[ep]))
+
+    return good_Ps, errs
+
+def DnC_analyze_good_Ps_firstL(data, args, P):
+    IBM = data['IBM']
+    if args.use_mel:
+        teX = data['teX_mag_mel']
+        trX = data['trX_mag_mel']
+    else:
+        teX = data['teX_mag']
+        trX = data['trX_mag']
+
+    IBM_Mean_sk = get_IBM_from_pairwise_dist(teX, trX, IBM, args.K, 'hamming', P)
+    tesReconMean_sk = librosa.istft(data['teX'] * IBM_Mean_sk, hop_length=512)
+    snr_mean_sk = SDR(tesReconMean_sk, data['tes'])[1]
+    print (args.M, args.K, snr_mean_sk)
+    return snr_mean_sk

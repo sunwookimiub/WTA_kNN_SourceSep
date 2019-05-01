@@ -1,3 +1,4 @@
+import _pickle as pickle
 import os
 import random
 import librosa
@@ -32,7 +33,7 @@ def load_more_spkr_with_noise(spkr_dir, noise, seed):
     return spkr_s, spkr_n, spkr_x
 
 def get_random_dr_f_speakers(dr_idx, num_speakers, seed):
-    all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in 
+    all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in
                     os.listdir('Data/train/dr{}'.format(dr_idx))if 'Store' not in name]
     f_spkrs = [spkr for spkr in all_spkrs if spkr.split('/')[1][0] == 'f']
     np.random.seed(seed)
@@ -40,7 +41,7 @@ def get_random_dr_f_speakers(dr_idx, num_speakers, seed):
     return [f_spkrs[i] for i in perms]
 
 def get_random_dr_m_speakers(dr_idx, num_speakers, seed):
-    all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in 
+    all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in
                     os.listdir('Data/train/dr{}'.format(dr_idx))if 'Store' not in name]
     m_spkrs = [spkr for spkr in all_spkrs if spkr.split('/')[1][0] == 'm']
     np.random.seed(seed)
@@ -61,9 +62,9 @@ def get_random_dr_speakers(dr_idx, num_speakers, seed):
 
 def get_random_tes(speaker_lists, seed):
     dr_idx = np.random.randint(1,9)
-    all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in 
+    all_spkrs = ['dr{}/{}'.format(dr_idx, name) for name in
                 os.listdir('Data/train/dr{}'.format(dr_idx))
-                if 'Store' not in name 
+                if 'Store' not in name
                 and 'dr{}/{}'.format(dr_idx,name) not in speaker_lists]
     np.random.seed(seed)
     perms = np.random.permutation(len(all_spkrs))[0]
@@ -85,7 +86,7 @@ def load_trainset(trs_spkr_lists, noise_idx_list, noise_frqs, seed):
     trs, trn, trx = [], [], []
     for i, trs_spkr in enumerate(trs_spkr_lists):
         for idx in noise_idx_list:
-            s, n, x = load_more_spkr_with_noise('Data/train/{}'.format(trs_spkr), noise_frqs[idx], seed) 
+            s, n, x = load_more_spkr_with_noise('Data/train/{}'.format(trs_spkr), noise_frqs[idx], seed)
             trs.append(s)
             trn.append(n)
             trx.append(x)
@@ -100,11 +101,11 @@ def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frq
     np.random.seed(seed)
     use_perms = np.random.permutation(len(noise_idx_list))
     all_perms = np.random.permutation(len(tes_spkr_lists))%10
-    
+
     for i, tes_spkr in enumerate(tes_spkr_lists):
         tes_list = load_spkr('Data/train/{}'.format(tes_spkr))
         spkr_s = tes_list[np.random.randint(0,len(tes_list))]
-        if use_only_seen_noises:            
+        if use_only_seen_noises:
             noise_idx = noise_idx_list[use_perms[i%len(use_perms)]]
         else:
             noise_idx = all_perms[i%len(all_perms)]
@@ -116,13 +117,13 @@ def load_testset(tes_spkr_lists, noise_idx_list, use_only_seen_noises, noise_frq
     tes = np.concatenate(tes).ravel()
     ten = np.concatenate(ten).ravel()
     tex = np.concatenate(tex).ravel()
-    
+
     print ("Test Noise Index: {}".format(used_noises))
     return tes, ten, tex
 
 def setup_experiment_data(args):
     noise_frqs = load_noises('Data/Duan')
-        
+
     # Load trainset
     trs_spkr_lists = []
     for i in range(1,args.n_dr+1):
@@ -131,7 +132,7 @@ def setup_experiment_data(args):
     random.shuffle(trs_spkr_lists)
     print ("Train Speakers: {}".format(trs_spkr_lists))
     trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs, args.seed)
-    
+
     # Load testset
     tes_spkr_lists = []
     for i in range(args.n_test_spkrs):
@@ -152,61 +153,79 @@ def setup_experiment_data(args):
     trS_mag, trN_mag, trX_mag, teS_mag, teN_mag, teX_mag = get_magnitudes([trS, trN, trX, teS, teN, teX])
     IBM = (trS_mag > trN_mag)*1
     te_IRM = get_IRM(teS_mag, teN_mag)
-    
+
     # Mel spectrogram
     trX_mag_mel, teX_mag_mel = get_mels([trX_mag, teX_mag])
 
-    data = {'tes': tes, 'teX': teX, 'te_IRM': te_IRM, 
+    data = {'tes': tes, 'teX': teX, 'te_IRM': te_IRM,
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
             'trX_mag_mel': trX_mag_mel, 'teX_mag_mel': teX_mag_mel}
-    
+
     return data
 
 def setup_debug_data(args):
-    noise_frqs = load_noises('Data/Duan')
-        
     if args.seed == 0:
-        trs_spkr_lists = ['dr6/flag0', 'dr8/fbcg1', 'dr3/mtlb0', 'dr1/mrcg0', 'dr5/mhmg0', 'dr2/fpjf0', 
-                          'dr2/mrab0', 'dr6/msds0', 'dr7/mrpc1', 'dr4/mbma0', 'dr5/ftbw0', 'dr3/fntb0', 
-                          'dr1/ftbr0', 'dr4/fdkn0', 'dr8/mbsb0', 'dr7/fmkc0']
-        tes_spkr_lists = ['dr5/flja0', 'dr2/mmaa0', 'dr4/mlsh0', 'dr5/mwch0', 'dr6/majp0', 'dr4/msrg0', 
-                          'dr3/mtpp0', 'dr6/fsbk0', 'dr6/fjdm2', 'dr4/mmbs0']
+        if args.noise_idx[0]==0:
+            with open("datadebug_seed0_n0.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==1:
+            with open("datadebug_seed0_n1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==2:
+            with open("datadebug_seed0_n2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==3:
+            with open("datadebug_seed0_n3.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==4:
+            with open("datadebug_seed0_n4.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==5:
+            with open("datadebug_seed0_n5.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==6:
+            with open("datadebug_seed0_n6.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==7:
+            with open("datadebug_seed0_n7.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==8: 
+            with open("datadebug_seed0_n8.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==9: 
+            with open("datadebug_seed0_n9.pkl", "rb") as input_file: return pickle.load(input_file)
     elif args.seed == 1:
-        trs_spkr_lists = ['dr2/faem0', 'dr6/fklc1', 'dr1/fvfb0', 'dr8/fpls0', 'dr4/fssb0', 'dr3/mrjb1', 
-                          'dr2/mjma0', 'dr5/fsag0', 'dr4/mpeb0', 'dr6/mesj0', 'dr8/mmea0', 'dr1/mdac0', 
-                          'dr7/fpab1', 'dr7/mdcm0', 'dr5/mrvg0', 'dr3/fdfb0']
-        tes_spkr_lists = ['dr4/fcag0', 'dr4/fjwb1', 'dr4/mcss0', 'dr2/fajw0', 'dr2/fdxw0', 'dr2/fskl0', 
-                          'dr4/mmbs0', 'dr4/flkm0', 'dr2/marc0', 'dr4/mfwk0']
+        if args.noise_idx[0]==0: 
+            with open("datadebug_seed1_n0.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==1: 
+            with open("datadebug_seed1_n1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==2: 
+            with open("datadebug_seed1_n2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==3: 
+            with open("datadebug_seed1_n3.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==4: 
+            with open("datadebug_seed1_n4.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==5: 
+            with open("datadebug_seed1_n5.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==6: 
+            with open("datadebug_seed1_n6.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==7: 
+            with open("datadebug_seed1_n7.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==8: 
+            with open("datadebug_seed1_n8.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==9: 
+            with open("datadebug_seed1_n9.pkl", "rb") as input_file: return pickle.load(input_file)
     elif args.seed == 2:
-        trs_spkr_lists = ['dr7/fjen0', 'dr6/mkes0', 'dr4/mjrh0', 'dr7/mbar0', 'dr4/flhd0', 'dr1/fdaw0', 
-                          'dr5/fsag0', 'dr2/mrjh0', 'dr5/mewm0', 'dr3/fcmg0', 'dr6/fapb0', 'dr2/faem0', 
-                          'dr3/mgaf0', 'dr8/fmbg0', 'dr8/mtcs0', 'dr1/mrws0']
-        tes_spkr_lists = ['dr5/mtmt0', 'dr1/ftbr0', 'dr7/mrpc1', 'dr1/mjwt0', 'dr7/fpab1', 'dr1/mtjs0', 
-                          'dr5/mjrg0', 'dr5/mjxa0', 'dr6/msds0', 'dr8/mejs0']
-    
-    # Load trainset    
-    print ("Train Speakers: {}".format(trs_spkr_lists))
-    trs, trn, trx = load_trainset(trs_spkr_lists, args.noise_idx, noise_frqs, args.seed)
-    
-    # Load testset
-    print ("Test Speakers: {}".format(tes_spkr_lists))
-    tes, ten, tex = load_testset(tes_spkr_lists, args.noise_idx, args.use_only_seen_noises, noise_frqs, args.seed)
-
-    # Normalize
-    max_amp = trx.max()
-    trs, trn, trx, tes, ten, tex = normalize_frqs(max_amp, [trs, trn, trx, tes, ten, tex])
-
-    # STFT
-    trS, trN, trX, teS, teN, teX = stft_transform([trs, trn, trx, tes, ten, tex])
-    trS_mag, trN_mag, trX_mag, teS_mag, teN_mag, teX_mag = get_magnitudes([trS, trN, trX, teS, teN, teX])
-    IBM = (trS_mag > trN_mag)*1
-    te_IRM = get_IRM(teS_mag, teN_mag)
-    
-    # Mel spectrogram
-    trX_mag_mel, teX_mag_mel = get_mels([trX_mag, teX_mag])
-
-    data = {'tes': tes, 'teX': teX, 'te_IRM': te_IRM, 
-            'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
-            'trX_mag_mel': trX_mag_mel, 'teX_mag_mel': teX_mag_mel}
-    
-    return data
+        if args.noise_idx[0]==0: 
+            with open("datadebug_seed2_n0.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==1: 
+            with open("datadebug_seed2_n1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==2: 
+            with open("datadebug_seed2_n2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==3: 
+            with open("datadebug_seed2_n3.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==4: 
+            with open("datadebug_seed2_n4.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==5: 
+            with open("datadebug_seed2_n5.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==6: 
+            with open("datadebug_seed2_n6.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==7: 
+            with open("datadebug_seed2_n7.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==8: 
+            with open("datadebug_seed2_n8.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==9: 
+            with open("datadebug_seed2_n9.pkl", "rb") as input_file: return pickle.load(input_file)
+    else:
+        return -1

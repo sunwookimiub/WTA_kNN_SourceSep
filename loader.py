@@ -157,7 +157,8 @@ def setup_experiment_data(args):
     # Mel spectrogram
     trX_mag_mel, teX_mag_mel = get_mels([trX_mag, teX_mag])
 
-    data = {'tes': tes, 'teX': teX, 'te_IRM': te_IRM,
+    data = {'tes': tes, 'ten': ten, 'tex': tex, 
+            'teX': teX, 'te_IRM': te_IRM,
             'trX_mag': trX_mag, 'teX_mag': teX_mag, 'IBM': IBM,
             'trX_mag_mel': trX_mag_mel, 'teX_mag_mel': teX_mag_mel}
 
@@ -166,66 +167,66 @@ def setup_experiment_data(args):
 def setup_debug_data(args):
     if args.seed == 0:
         if args.noise_idx[0]==0:
-            with open("datadebug_seed0_n0.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n0_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==1:
-            with open("datadebug_seed0_n1.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n1_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==2:
-            with open("datadebug_seed0_n2.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n2_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==3:
-            with open("datadebug_seed0_n3.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n3_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==4:
-            with open("datadebug_seed0_n4.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n4_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==5:
-            with open("datadebug_seed0_n5.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n5_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==6:
-            with open("datadebug_seed0_n6.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n6_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==7:
-            with open("datadebug_seed0_n7.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n7_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==8: 
-            with open("datadebug_seed0_n8.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n8_s0.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==9: 
-            with open("datadebug_seed0_n9.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n9_s0.pkl", "rb") as input_file: return pickle.load(input_file)
     elif args.seed == 1:
-        if args.noise_idx[0]==0: 
-            with open("datadebug_seed1_n0.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==1: 
-            with open("datadebug_seed1_n1.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==2: 
-            with open("datadebug_seed1_n2.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==3: 
-            with open("datadebug_seed1_n3.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==4: 
-            with open("datadebug_seed1_n4.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==5: 
-            with open("datadebug_seed1_n5.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==6: 
-            with open("datadebug_seed1_n6.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==7: 
-            with open("datadebug_seed1_n7.pkl", "rb") as input_file: return pickle.load(input_file)
+        if args.noise_idx[0]==0:
+            with open("new_debugdata_n0_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==1:
+            with open("new_debugdata_n1_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==2:
+            with open("new_debugdata_n2_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==3:
+            with open("new_debugdata_n3_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==4:
+            with open("new_debugdata_n4_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==5:
+            with open("new_debugdata_n5_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==6:
+            with open("new_debugdata_n6_s1.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==7:
+            with open("new_debugdata_n7_s1.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==8: 
-            with open("datadebug_seed1_n8.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n8_s1.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==9: 
-            with open("datadebug_seed1_n9.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n9_s1.pkl", "rb") as input_file: return pickle.load(input_file)
     elif args.seed == 2:
-        if args.noise_idx[0]==0: 
-            with open("datadebug_seed2_n0.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==1: 
-            with open("datadebug_seed2_n1.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==2: 
-            with open("datadebug_seed2_n2.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==3: 
-            with open("datadebug_seed2_n3.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==4: 
-            with open("datadebug_seed2_n4.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==5: 
-            with open("datadebug_seed2_n5.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==6: 
-            with open("datadebug_seed2_n6.pkl", "rb") as input_file: return pickle.load(input_file)
-        elif args.noise_idx[0]==7: 
-            with open("datadebug_seed2_n7.pkl", "rb") as input_file: return pickle.load(input_file)
+        if args.noise_idx[0]==0:
+            with open("new_debugdata_n0_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==1:
+            with open("new_debugdata_n1_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==2:
+            with open("new_debugdata_n2_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==3:
+            with open("new_debugdata_n3_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==4:
+            with open("new_debugdata_n4_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==5:
+            with open("new_debugdata_n5_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==6:
+            with open("new_debugdata_n6_s2.pkl", "rb") as input_file: return pickle.load(input_file)
+        elif args.noise_idx[0]==7:
+            with open("new_debugdata_n7_s2.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==8: 
-            with open("datadebug_seed2_n8.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n8_s2.pkl", "rb") as input_file: return pickle.load(input_file)
         elif args.noise_idx[0]==9: 
-            with open("datadebug_seed2_n9.pkl", "rb") as input_file: return pickle.load(input_file)
+            with open("new_debugdata_n9_s2.pkl", "rb") as input_file: return pickle.load(input_file)
     else:
         return -1
